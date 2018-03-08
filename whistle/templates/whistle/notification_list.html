@@ -1,0 +1,48 @@
+{% load i18n humanize %}
+
+<section class="simple-list">
+    <div class="container">
+        {% if not object_list %}
+            <p class="no-results">{% trans 'No notifications found' %}</p>
+        {% else %}
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>{% trans 'Notification' %}</th>
+                        <th>{% trans 'Date' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notification in object_list %}
+                        <tr>
+                            <td>
+                                <a href="{{ notification.get_absolute_url }}">{{ notification }}</a>
+                            </td>
+                            <td>
+                                {{ notification.created|naturaltime }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        {% if is_paginated %}
+            <div class="pagination">
+                <span class="step-links">
+                {% if page_obj.has_previous %}
+                    <a id="paginLeft" href="?page={{ page_obj.previous_page_number }}">previous</a>
+                {% endif %}
+
+                <span class="current">
+                    {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+                </span>
+
+                {% if page_obj.has_next %}
+                    <a id="paginRight" href="?page={{ page_obj.next_page_number }}">next</a>
+                {% endif %}
+                </span>
+            </div>
+        {% endif %}
+    </div>
+</section>
