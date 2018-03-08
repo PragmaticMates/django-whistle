@@ -11,7 +11,7 @@ setup(
     author_email='info@pragmaticmates.com',
     maintainer='Pragmatic Mates',
     maintainer_email='info@pragmaticmates.com',
-    url='https://github.com/PragmaticMates/django-clever-selects',
+    url='https://github.com/PragmaticMates/django-whistle',
     packages=[
         'whistle',
         'whistle.migrations'
