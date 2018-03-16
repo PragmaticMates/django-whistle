@@ -1,0 +1,122 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-03-16 05:42+0100\n"
+"PO-Revision-Date: 2018-03-16 05:46+0058\n"
+"Last-Translator: b'Erik Telepovsky <erik@pragmaticmates.com>'\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"X-Translated-Using: django-rosetta 0.8.1\n"
+
+#: admin.py:21
+#, python-format
+msgid "%(count)d notification was marked as unread"
+msgid_plural "%(count)d notifications were marked as unread"
+msgstr[0] "%(count)d notifikácia bola označená za neprečítanú"
+msgstr[1] "%(count)d notifikácie boli označené za neprečítané"
+
+#: admin.py:29
+msgid "Make unread"
+msgstr "Označiť za neprečítané"
+
+#: admin.py:35
+#, python-format
+msgid "%(count)d notification was marked as read"
+msgid_plural "%(count)d notifications were marked as read"
+msgstr[0] "%(count)d notifikácia bola označená za prečítanú"
+msgstr[1] "%(count)d notifikácie boli označené za prečítané"
+
+#: admin.py:43
+msgid "Make read"
+msgstr "Označiť za prečítané"
+
+#: forms.py:22
+msgid "This field is required for selected event."
+msgstr "Toto pole je pre zvolenú udalosť povinné."
+
+#: forms.py:59
+msgid "Mail"
+msgstr "Email"
+
+#: forms.py:60 templates/whistle/notification_list.html:11
+msgid "Notification"
+msgstr "Notifikácia"
+
+#: forms.py:82
+msgid "Save"
+msgstr "Uložiť"
+
+#: models.py:22
+msgid "event"
+msgstr "udalosť"
+
+#: models.py:38
+msgid "read"
+msgstr "prečítané"
+
+#: models.py:39
+msgid "created"
+msgstr "vytvorené"
+
+#: models.py:40
+msgid "modified"
+msgstr "upravené"
+
+#: models.py:44
+msgid "notification"
+msgstr "notifikácia"
+
+#: models.py:45
+msgid "notifications"
+msgstr "notifikácie"
+
+#: models.py:74
+msgid "Related object does not exist anymore"
+msgstr "Súvisiaci objekt už neexistuje"
+
+#: templates/whistle/mails/new_notification.txt:3
+#, python-format
+msgid ""
+"Hi %(recipient)s,\n"
+"\n"
+"%(description)s\n"
+msgstr ""
+"Ahoj %(recipient)s,\n"
+"\n"
+"%(description)s\n"
+
+#: templates/whistle/notification_list.html:6
+msgid "No notifications found"
+msgstr "Nenašli sa žiadne notifikácie"
+
+#: templates/whistle/notification_list.html:12
+msgid "Actor"
+msgstr "Činiteľ"
+
+#: templates/whistle/notification_list.html:13
+msgid "Date"
+msgstr "Dátum"
+
+#: templates/whistle/settings.html:3
+msgid "Notification settings"
+msgstr "Nastavenia notifikácii"
+
+#: urls.py:9
+msgctxt "url"
+msgid "^settings/$"
+msgstr "^nastavenia/$"
+
+#: views.py:33
+msgid "Notices settings successfully updated"
+msgstr "Nastavenia oznamov úspešne uložené"

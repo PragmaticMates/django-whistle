@@ -17,7 +17,7 @@ class NotificationListView(LoginRequiredMixin, ListView):
         return super(NotificationListView, self).dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        return self.request.user.notifications.all()
+        return self.request.user.notifications.select_related('actor', 'recipient')
 
 
 class NoticeSettingsView(LoginRequiredMixin, FormView):

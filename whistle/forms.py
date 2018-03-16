@@ -79,8 +79,7 @@ class EditNoticesForm(forms.Form):
 
         fields.append(
             FormActions(
-                Submit('submit', _('Save'), css_class='btn-lg btn-secondary offset-sm-7'),
-                css_class='text-xs-center text-sm-left mt-2'
+                Submit('submit', _('Save'), css_class='btn-lg')
             )
         )
 

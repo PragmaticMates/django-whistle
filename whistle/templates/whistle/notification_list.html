@@ -9,6 +9,7 @@
                 <thead>
                     <tr>
                         <th>{% trans 'Notification' %}</th>
+                        <th>{% trans 'Actor' %}</th>
                         <th>{% trans 'Date' %}</th>
                     </tr>
                 </thead>
@@ -17,6 +18,9 @@
                         <tr>
                             <td>
                                 <a href="{{ notification.get_absolute_url }}">{{ notification }}</a>
+                            </td>
+                            <td>
+                                {{ notification.actor|default:'' }}
                             </td>
                             <td>
                                 {{ notification.created|naturaltime }}
