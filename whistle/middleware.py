@@ -17,7 +17,6 @@ class ReadNotificationMiddleware:
                     if notification.recipient == request.user:
                         notification.is_read = True
                         notification.save(update_fields=['is_read'])
-                        print('save')
                         request.user.clear_unread_notifications_cache()
                 except ObjectDoesNotExist:
                     pass
