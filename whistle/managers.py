@@ -4,11 +4,9 @@ import re
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
-from django.core.cache import cache
 from django.core.mail import send_mail
 from django.db.models import QuerySet
 from django.template import loader, TemplateDoesNotExist
-from django.utils.translation import get_language, ugettext
 
 from whistle import settings as whistle_settings
 
