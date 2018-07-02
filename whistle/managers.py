@@ -5,6 +5,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.cache import cache
+from django.core.mail import send_mail
 from django.db.models import QuerySet
 from django.template import loader, TemplateDoesNotExist
 from django.utils.translation import get_language, ugettext
@@ -18,6 +19,21 @@ class NotificationQuerySet(QuerySet):
 
     def mark_as_read(self):
         return self.update(is_read=True)
+
+    def for_recipient(self, recipient):
+        return self.filter(recipient=recipient)
+
+    def of_object(self, object):
+        return self.filter(
+            object_content_type=ContentType.objects.get_for_model(object),
+            object_id=object.id
+        )
+
+    def of_target(self, target):
+        return self.filter(
+            target_content_type=ContentType.objects.get_for_model(target),
+            target_id=target.id
+        )
 
 
 class NoticeManager(object):
