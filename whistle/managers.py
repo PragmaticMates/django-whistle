@@ -119,15 +119,36 @@ class EmailManager(object):
         except TemplateDoesNotExist:
             t = loader.get_template('whistle/mails/new_notification.txt'.format(event.lower()))
 
+        # HTML template
+        try:
+            t_html = loader.get_template('whistle/mails/{}.html'.format(event.lower()))
+        except TemplateDoesNotExist:
+            try:
+                t_html = loader.get_template('whistle/mails/new_notification.html')
+            except TemplateDoesNotExist:
+                t_html = None
+
         # recipients
         recipient_list = [recipient.email]
 
         # description
         description = NoticeManager.get_description(event, actor, object, target, True)
 
+        # subject
+        short_description = NoticeManager.get_description(event, actor, object, target, False)
+
+        site = get_current_site(request)
+
+        subject = '[{}] {}'.format(
+            site.name,
+            short_description  # TODO: add setting if short or long description should be used in subject
+        )
+
         # context
         context = {
+            'subject': subject,
             'description': description,
+            'short_description': short_description,
             'request': request,
             'recipient': recipient,
             'actor': actor,
@@ -144,23 +165,19 @@ class EmailManager(object):
             target_content_type = ContentType.objects.get_for_model(target)
             context[target_content_type.model.lower()] = target
 
-        # subject
-        short_description = NoticeManager.get_description(event, actor, object, target, False)
-
-        site = get_current_site(request)
-
-        subject = '[{}] {}'.format(
-            site.name,
-            short_description  # TODO: add setting if short or long description should be used in subject
-        )
-
         # message
         message = t.render(context)
+
+        # HTML
+        if t_html:
+            html_message = t_html.render(context)
+        else:
+            html_message = None
 
         if whistle_settings.USE_RQ:
             # use background task to release main thread
             from whistle.helpers import send_mail_in_background
-            send_mail_in_background.delay(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, fail_silently=False)
+            send_mail_in_background.delay(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
         else:
             # send mail in main thread
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, fail_silently=False)
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
