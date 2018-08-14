@@ -19,7 +19,7 @@ class NotificationQuerySet(QuerySet):
         return self.update(is_read=True)
 
     def for_recipient(self, recipient):
-        return self.filter(recipient=recipient)
+        return self.filter(recipient=recipient) if recipient.is_authenticated else self.none()
 
     def of_object(self, object):
         return self.filter(
