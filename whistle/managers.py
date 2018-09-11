@@ -1,5 +1,6 @@
-import json
+from __future__ import unicode_literals
 
+import json
 import re
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
