@@ -24,12 +24,22 @@ class UserNotificationsMixin(models.Model):
         for notification in unread_notifications:
             if notification.object:
                 notification.object_display = str(notification.object)
-                notification.object_url = notification.object.get_absolute_url()
+
+                try:
+                    notification.object_url = notification.object.get_absolute_url()
+                except AttributeError:
+                    notification.object_url = '#'
+
                 notification.object_model = notification.object.__class__.__name__
 
             if notification.target:
                 notification.target_display = str(notification.target)
-                notification.target_url = notification.target.get_absolute_url()
+
+                try:
+                    notification.target_url = notification.target.get_absolute_url()
+                except AttributeError:
+                    notification.target_url = '#'
+
                 notification.target_model = notification.target.__class__.__name__
 
         # save into cache
