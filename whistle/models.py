@@ -35,6 +35,7 @@ class Notification(models.Model):
         blank=True, null=True, default=None)
     target = GenericForeignKey(ct_field='target_content_type', fk_field='target_id')
 
+    details = models.TextField(_('details'), blank=True)
     is_read = models.BooleanField(_('read'), default=False, db_index=True)
     created = models.DateTimeField(_('created'), auto_now_add=True, db_index=True)
     modified = models.DateTimeField(_('modified'), auto_now=True)
@@ -66,7 +67,7 @@ class Notification(models.Model):
             return saved_description
 
         try:
-            description = NoticeManager.get_description(self.event, self.actor, self.object, self.target, pass_variables)
+            description = NoticeManager.get_description(self.event, self.actor, self.object, self.target, self.details, pass_variables)
         except KeyError:
             # referenced object does not exist anymore
             if self.pk:
