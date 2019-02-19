@@ -52,7 +52,7 @@ class NoticeManager(object):
             return True
 
     @staticmethod
-    def notify(request, recipient, event, actor=None, object=None, target=None, details=None):
+    def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
         registered_for_notification = NoticeManager.is_notice_allowed(recipient, 'notification', event)
 
         if registered_for_notification:
@@ -65,7 +65,7 @@ class NoticeManager(object):
                 actor=actor,
                 object=object,
                 target=target,
-                details=details or ''
+                details=details
             )
 
             # clear user notifications cache
@@ -119,7 +119,7 @@ class NoticeManager(object):
 
 class EmailManager(object):
     @staticmethod
-    def send_mail(request, recipient, event, actor=None, object=None, target=None, details=None):
+    def send_mail(request, recipient, event, actor=None, object=None, target=None, details=''):
         """
         Send email notification about a new event to its recipient
         """
@@ -143,10 +143,10 @@ class EmailManager(object):
         recipient_list = [recipient.email]
 
         # description
-        description = NoticeManager.get_description(event, actor, object, target, details, True)
+        description = NoticeManager.get_description(event, actor, object, target, True)
 
         # subject
-        short_description = NoticeManager.get_description(event, actor, object, target, details, False)
+        short_description = NoticeManager.get_description(event, actor, object, target, False)
 
         site = get_current_site(request)
 
