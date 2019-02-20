@@ -4,8 +4,8 @@ from whistle.managers import NoticeManager
 from whistle import settings as whistle_settings
 
 
-def notify(request, recipient, event, actor=None, object=None, target=None):
-    NoticeManager.notify(request, recipient, event, actor, object, target)
+def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
+    NoticeManager.notify(request, recipient, event, actor, object, target, details)
 
 
 @job(whistle_settings.REDIS_QUEUE)

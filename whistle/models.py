@@ -35,6 +35,7 @@ class Notification(models.Model):
         blank=True, null=True, default=None)
     target = GenericForeignKey(ct_field='target_content_type', fk_field='target_id')
 
+    details = models.TextField(_('details'), blank=True, default='')
     is_read = models.BooleanField(_('read'), default=False, db_index=True)
     created = models.DateTimeField(_('created'), auto_now_add=True, db_index=True)
     modified = models.DateTimeField(_('modified'), auto_now=True)

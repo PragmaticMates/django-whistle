@@ -52,7 +52,7 @@ class NoticeManager(object):
             return True
 
     @staticmethod
-    def notify(request, recipient, event, actor=None, object=None, target=None):
+    def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
         registered_for_notification = NoticeManager.is_notice_allowed(recipient, 'notification', event)
 
         if registered_for_notification:
@@ -64,7 +64,8 @@ class NoticeManager(object):
                 event=event,
                 actor=actor,
                 object=object,
-                target=target
+                target=target,
+                details=details
             )
 
             # clear user notifications cache
@@ -73,10 +74,10 @@ class NoticeManager(object):
         registered_for_email = NoticeManager.is_notice_allowed(recipient, 'mail', event)
 
         if registered_for_email:
-            EmailManager.send_mail(request, recipient, event, actor, object, target)
+            EmailManager.send_mail(request, recipient, event, actor, object, target, details)
 
     @staticmethod
-    def get_description(event, actor, object, target, pass_variables=True):
+    def get_description(event, actor, object, target, details, pass_variables=True):
         event_template = dict(whistle_settings.EVENTS).get(event)
 
         event_context = {
@@ -97,6 +98,15 @@ class NoticeManager(object):
             target_content_type = ContentType.objects.get_for_model(target)
             event_context[target_content_type.model.lower()] = target if pass_variables else ''
 
+        if details and pass_variables:
+            if not event_template.endswith('.'):
+                event_template += '.'
+
+            if not event_template.endswith('.'):
+                event_template += '.'
+
+            event_template += ' ' + details
+
         description = event_template % event_context
 
         if not pass_variables:
@@ -109,7 +119,7 @@ class NoticeManager(object):
 
 class EmailManager(object):
     @staticmethod
-    def send_mail(request, recipient, event, actor=None, object=None, target=None):
+    def send_mail(request, recipient, event, actor=None, object=None, target=None, details=''):
         """
         Send email notification about a new event to its recipient
         """
