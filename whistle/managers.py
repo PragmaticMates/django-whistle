@@ -156,6 +156,7 @@ class EmailManager(object):
             'actor': actor,
             'object': object,
             'target': target,
+            'details': details,
             'event': event,
         }
 
