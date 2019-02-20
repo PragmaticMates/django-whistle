@@ -77,7 +77,7 @@ class NoticeManager(object):
             EmailManager.send_mail(request, recipient, event, actor, object, target, details)
 
     @staticmethod
-    def get_description(event, actor, object, target, details, pass_variables=True):
+    def get_description(event, actor, object, target, pass_variables=True):
         event_template = dict(whistle_settings.EVENTS).get(event)
 
         event_context = {
@@ -97,15 +97,6 @@ class NoticeManager(object):
         if target:
             target_content_type = ContentType.objects.get_for_model(target)
             event_context[target_content_type.model.lower()] = target if pass_variables else ''
-
-        if details and pass_variables:
-            if not event_template.endswith('.'):
-                event_template += '.'
-
-            if not event_template.endswith('.'):
-                event_template += '.'
-
-            event_template += ' ' + details
 
         description = event_template % event_context
 
