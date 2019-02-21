@@ -8,7 +8,8 @@
             <table class="table">
                 <thead>
                     <tr>
-                        <th>{% trans 'Notification' %}</th>
+                        <th>{% trans 'Description' %}</th>
+                        <th>{% trans 'Details' %}</th>
                         <th>{% trans 'Actor' %}</th>
                         <th>{% trans 'Date' %}</th>
                     </tr>
@@ -18,6 +19,9 @@
                         <tr>
                             <td>
                                 <a href="{{ notification.get_absolute_url }}">{{ notification }}</a>
+                            </td>
+                            <td>
+                                {{ notification.details }}
                             </td>
                             <td>
                                 {{ notification.actor|default:'' }}
