@@ -103,8 +103,8 @@ class NoticeManager(object):
         if not pass_variables:
             description = description.replace("''", '')   # remove all 2 single quotas
             description = description.replace('""', '')   # remove all 2 double quotas
+            description = description.strip(' :.')         # remove trailing spaces and semicolons
             description = re.sub(' +', ' ', description)  # remove all multiple spaces
-            description = description.strip(' :')         # remove trailing spaces and semicolons
         return description
 
 

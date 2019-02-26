@@ -1,8 +1,10 @@
+import re
+
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, HTML, Field, Layout, Submit
 from django import forms
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext_lazy as _, ugettext
 
 from whistle.managers import NoticeManager
 from whistle.models import Notification
@@ -44,7 +46,19 @@ class EditNoticesForm(forms.Form):
 
     @property
     def labels(self):
-        return dict(whistle_settings.EVENTS)
+        events = dict(whistle_settings.EVENTS)
+
+        for event, label in events.items():
+            pat = re.compile(r'%\(.*\)s|"%\(.*\)s"')
+            new_label = re.sub(pat, '', ugettext(label))  # remove all variable placeholders
+            new_label = new_label.replace("''", '')  # remove all 2 single quotas
+            new_label = new_label.replace('""', '')  # remove all 2 double quotas
+            new_label = new_label.strip(' :.')  # remove trailing spaces and semicolons
+            new_label = re.sub(' +', ' ', new_label)  # remove all multiple spaces
+
+            events[event] = new_label
+
+        return events
 
     def get_initial_value(self, channel, event):
         return NoticeManager.is_notice_allowed(self.user, channel, event)
