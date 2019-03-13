@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 from django.conf import settings
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -46,7 +48,7 @@ class Notification(models.Model):
         verbose_name_plural = _('notifications')
         ordering = ('-created',)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.description
 
     @property
