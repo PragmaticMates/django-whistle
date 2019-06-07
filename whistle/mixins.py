@@ -19,7 +19,7 @@ class UserNotificationsMixin(models.Model):
         if saved_notifications is not None:
             return saved_notifications
 
-        unread_notifications = self.notifications.unread()
+        unread_notifications = self.notifications.unread().select_related('actor')
 
         for notification in unread_notifications:
             if notification.object:
