@@ -93,6 +93,11 @@ class Notification(models.Model):
         except AttributeError:
             url = '#' if self.target is None else self.target.get_absolute_url()
 
+        url_handler = whistle_settings.URL_HANDLER
+
+        if url_handler:
+            url = url_handler(url, self)
+
         if not self.is_read:
             # add read-notification param for middleware
             params = {'read-notification': self.pk}
@@ -101,7 +106,7 @@ class Notification(models.Model):
             query.update(params)
             url_parts[4] = urlencode(query)
             url = urlparse.urlunparse(url_parts)
-
+            
         # save into cache
         cache.set(cache_key, url, version=cache_version, timeout=whistle_settings.TIMEOUT)
 
