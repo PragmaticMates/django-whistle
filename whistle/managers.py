@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import send_mail
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.template import loader, TemplateDoesNotExist
 
 from whistle import settings as whistle_settings
@@ -33,6 +33,12 @@ class NotificationQuerySet(QuerySet):
             target_content_type=ContentType.objects.get_for_model(target),
             target_id=target.id
         )
+    
+    def of_object_or_target(self, obj):
+        return self.filter(
+            Q(object_content_type=ContentType.objects.get_for_model(obj), object_id=obj.id) |
+            Q(target_content_type=ContentType.objects.get_for_model(obj), target_id=obj.id)
+        )
 
 
 class NoticeManager(object):
@@ -54,6 +60,7 @@ class NoticeManager(object):
     @staticmethod
     def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
         registered_for_notification = NoticeManager.is_notice_allowed(recipient, 'notification', event)
+        hash = None
 
         if registered_for_notification:
             from whistle.models import Notification
@@ -68,13 +75,15 @@ class NoticeManager(object):
                 details=details
             )
 
+            hash = notification.hash
+
             # clear user notifications cache
             recipient.clear_unread_notifications_cache()
 
         registered_for_email = NoticeManager.is_notice_allowed(recipient, 'mail', event)
 
         if registered_for_email:
-            EmailManager.send_mail(request, recipient, event, actor, object, target, details)
+            EmailManager.send_mail(request, recipient, event, actor, object, target, details, hash)
 
     @staticmethod
     def get_description(event, actor, object, target, pass_variables=True):
@@ -110,7 +119,7 @@ class NoticeManager(object):
 
 class EmailManager(object):
     @staticmethod
-    def send_mail(request, recipient, event, actor=None, object=None, target=None, details=''):
+    def send_mail(request, recipient, event, actor=None, object=None, target=None, details='', hash=None):
         """
         Send email notification about a new event to its recipient
         """
@@ -158,6 +167,7 @@ class EmailManager(object):
             'target': target,
             'details': details,
             'event': event,
+            'hash': hash
         }
 
         if object:

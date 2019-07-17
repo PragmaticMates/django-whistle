@@ -53,6 +53,12 @@ class Notification(models.Model):
     def description(self):
         return self.get_description(True)
 
+    @property
+    def hash(self):
+        from django.core import signing
+        protect = {'notification_id': self.pk, 'recipient_id': self.recipient.pk}
+        return signing.dumps(protect, key=whistle_settings.SIGNING_KEY, salt=whistle_settings.SIGNING_SALT)
+
     def short_description(self):
         return self.get_description(False)
 

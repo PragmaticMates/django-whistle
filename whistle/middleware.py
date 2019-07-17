@@ -36,26 +36,16 @@ class ReadNotificationMiddleware:
                 # read notifications by object
                 object = context.get('object')
 
-                unread_object_notifications = Notification.objects\
+                unread_notifications = Notification.objects\
                     .unread()\
                     .for_recipient(request.user)\
-                    .of_object(object)
+                    .of_object_or_target(object)
 
-                if unread_object_notifications.exists():
-                    unread_object_notifications.update(is_read=True)
+                if unread_notifications.exists():
+                    unread_notifications.update(is_read=True)
                     request.user.clear_unread_notifications_cache()
                     reload_response = True
 
-                # read notifications by target
-                unread_target_notifications = Notification.objects \
-                    .unread() \
-                    .for_recipient(request.user) \
-                    .of_target(object)
-
-                if unread_target_notifications.exists():
-                    unread_target_notifications.update(is_read=True)
-                    request.user.clear_unread_notifications_cache()
-                    reload_response = True
         except AttributeError:
             pass
 

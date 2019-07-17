@@ -1,7 +1,14 @@
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.signing import BadSignature
+from django.http import HttpResponse
 from django.utils.translation import ugettext_lazy as _
+from django.views import View
 from django.views.generic import ListView, FormView
+
+from whistle import settings
 from whistle.forms import EditNoticesForm
 from whistle.models import Notification
 
@@ -37,3 +44,38 @@ class NoticeSettingsView(LoginRequiredMixin, FormView):
         form_kwargs = super(NoticeSettingsView, self).get_form_kwargs()
         form_kwargs['user'] = self.request.user
         return form_kwargs
+
+
+class ReadNotificationByHashView(View):
+    def dispatch(self, *args, **kwargs):
+        hash = kwargs.get('hash')
+
+        from django.core import signing
+
+        try:
+            notification_data = signing.loads(hash, key=settings.SIGNING_KEY, salt=settings.SIGNING_SALT)
+        except BadSignature:
+            return HttpResponse('BAD SIGNATURE')
+
+        notification_id = notification_data.get('notification_id', None)
+        recipient_id = notification_data.get('recipient_id', None)
+
+        try:
+            notification = Notification.objects.get(pk=notification_id)
+
+            if notification.is_read:
+                return HttpResponse('ALREADY READ')
+
+            user = get_user_model().objects.get(pk=recipient_id)
+
+            if notification.recipient != user:
+                return HttpResponse('INVALID RECIPIENT')
+
+            notification.is_read = True
+            notification.save(update_fields=['is_read'])
+            user.clear_unread_notifications_cache()
+
+        except ObjectDoesNotExist:
+            return HttpResponse('NOT FOUND')
+
+        return HttpResponse('OK')
