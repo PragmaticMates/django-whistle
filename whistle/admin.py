@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.auth import get_user_model
 from django.utils.translation import ugettext_lazy as _, ngettext
 from whistle.forms import NotificationAdminForm
 from whistle.models import Notification
@@ -6,7 +7,7 @@ from whistle.models import Notification
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    actions = ['make_unread', 'make_read']
+    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache']
     date_hierarchy = 'created'
     list_select_related = ('recipient', 'actor')
     list_display = ('__str__', 'recipient', 'actor', 'is_read', 'created')
@@ -41,3 +42,13 @@ class NotificationAdmin(admin.ModelAdmin):
 
         self.message_user(request, message)
     make_read.short_description = _('Make read')
+
+    def clear_unread_notifications_cache(self, request, queryset):
+        recipients = get_user_model().objects.filter(pk__in=queryset.values_list('recipient', flat=True))
+
+        if recipients.exists():
+            for recipient in recipients:
+                recipient.clear_unread_notifications_cache()
+            self.message_user(request, _('Unread notifications cache cleared'))
+
+    clear_unread_notifications_cache.short_description = _('Clear unread notifications cache')
