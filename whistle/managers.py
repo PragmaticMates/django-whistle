@@ -5,6 +5,7 @@ import re
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db.models import QuerySet, Q
 from django.template import loader, TemplateDoesNotExist
@@ -148,12 +149,15 @@ class EmailManager(object):
         # subject
         short_description = NoticeManager.get_description(event, actor, object, target, False)
 
-        site = get_current_site(request)
+        try:
+            site = get_current_site(request)
 
-        subject = '[{}] {}'.format(
-            site.name,
-            short_description  # TODO: add setting if short or long description should be used in subject
-        )
+            subject = '[{}] {}'.format(
+                site.name,
+                short_description  # TODO: add setting if short or long description should be used in subject
+            )
+        except ObjectDoesNotExist:
+            subject = short_description
 
         # context
         context = {
