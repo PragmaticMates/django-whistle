@@ -60,6 +60,9 @@ class NoticeManager(object):
 
     @staticmethod
     def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
+        if not recipient.is_active:
+            return
+
         registered_for_notification = NoticeManager.is_notice_allowed(recipient, 'notification', event)
         hash = None
 
