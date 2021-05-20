@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.signing import BadSignature
 from django.http import HttpResponse
+from django.urls import reverse_lazy
 from django.utils.translation import ugettext_lazy as _
 from django.views import View
 from django.views.generic import ListView, FormView
@@ -29,7 +30,7 @@ class NotificationListView(LoginRequiredMixin, ListView):
 
 class NoticeSettingsView(LoginRequiredMixin, FormView):
     form_class = EditNoticesForm
-    success_url = '/'
+    success_url = reverse_lazy('notifications:settings')  # TODO: configurable
     template_name = 'whistle/settings.html'
 
     def form_valid(self, form):
