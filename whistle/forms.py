@@ -66,12 +66,16 @@ class EditNoticesForm(forms.Form):
     def init_fields(self):
         for event, label in self.labels.items():
             event_identifier = event.lower()
-            mail_field_name = 'mail_{}'.format(event_identifier)
-            notification_field_name = 'notification_{}'.format(event_identifier)
+            field_names = {
+                'web': 'notification_{}'.format(event_identifier),  # TODO: migrate 'notification' to 'web'
+                'mail': 'mail_{}'.format(event_identifier),
+                'push': 'push_{}'.format(event_identifier)
+            }
 
             self.fields.update({
-                mail_field_name: forms.BooleanField(label=_('Mail'), required=False, initial=self.get_initial_value('mail', event)),
-                notification_field_name: forms.BooleanField(label=_('Notification'), required=False, initial=self.get_initial_value('notification', event)),
+                field_names['web']: forms.BooleanField(label=_('Web'), required=False, initial=self.get_initial_value('notification', event)),  # TODO: migrate 'notification' to 'web'
+                field_names['mail']: forms.BooleanField(label=_('Mail'), required=False, initial=self.get_initial_value('mail', event)),
+                field_names['push']: forms.BooleanField(label=_('Push'), required=False, initial=self.get_initial_value('push', event))
             })
 
     def init_form_helper(self):
@@ -79,13 +83,18 @@ class EditNoticesForm(forms.Form):
 
         for event, label in self.labels.items():
             event_identifier = event.lower()
-            mail_field_name = 'mail_{}'.format(event_identifier)
-            notification_field_name = 'notification_{}'.format(event_identifier)
+
+            field_names = {
+                'web': 'notification_{}'.format(event_identifier),  # TODO: migrate 'notification' to 'web'
+                'mail': 'mail_{}'.format(event_identifier),
+                'push': 'push_{}'.format(event_identifier)
+            }
 
             field = Div(
                 Div(HTML('<p>{}</p>'.format(label)), css_class='col-md-6'),
-                Div(Field(notification_field_name, css_class='switch'), css_class='col-md-3'),
-                Div(Field(mail_field_name, css_class='switch'), css_class='col-md-3'),
+                Div(Field(field_names['web'], css_class='switch'), css_class='col-md'),
+                Div(Field(field_names['mail'], css_class='switch'), css_class='col-md'),
+                Div(Field(field_names['push'], css_class='switch'), css_class='col-md'),
                 css_class='row'
             )
 
@@ -102,14 +111,19 @@ class EditNoticesForm(forms.Form):
         self.helper.layout = Layout(*fields)
 
     def clean(self):
-        settings = {'mail': {}, 'notification': {}}
+        settings = {'mail': {}, 'notification': {}, 'push': {}}  # TODO: migrate 'notification' to 'web'
 
         for event in self.labels.keys():
             event_identifier = event.lower()
-            mail_field_name = 'mail_{}'.format(event_identifier)
-            notification_field_name = 'notification_{}'.format(event_identifier)
 
-            settings['mail'][event_identifier] = self.cleaned_data.get(mail_field_name, False)
-            settings['notification'][event_identifier] = self.cleaned_data.get(notification_field_name, False)
+            field_names = {
+                'web': 'notification_{}'.format(event_identifier),  # TODO: migrate 'notification' to 'web'
+                'mail': 'mail_{}'.format(event_identifier),
+                'push': 'push_{}'.format(event_identifier)
+            }
+
+            settings['notification'][event_identifier] = self.cleaned_data.get(field_names['web'], False)  # TODO: migrate 'notification' to 'web'
+            settings['mail'][event_identifier] = self.cleaned_data.get(field_names['mail'], False)
+            settings['push'][event_identifier] = self.cleaned_data.get(field_names['push'], False)
 
         return settings
