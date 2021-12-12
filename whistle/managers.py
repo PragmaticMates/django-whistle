@@ -63,31 +63,33 @@ class NotificationManager(object):
         if not recipient.is_active:
             return
 
-        registered_for_notification = NotificationManager.is_notification_enabled(recipient, 'notification', event)
-        hash = None
+        from whistle.models import Notification
 
-        if registered_for_notification:
-            from whistle.models import Notification
+        # create new notification object
+        notification = Notification(
+            recipient=recipient,
+            event=event,
+            actor=actor,
+            object=object,
+            target=target,
+            details=details
+        )
 
-            # create new notification object
-            notification = Notification.objects.create(
-                recipient=recipient,
-                event=event,
-                actor=actor,
-                object=object,
-                target=target,
-                details=details
-            )
-
-            hash = notification.hash
+        # web
+        if NotificationManager.is_notification_enabled(recipient, 'notification', event):
+            # save notification to DB
+            notification.save()
 
             # clear user notifications cache
             recipient.clear_unread_notifications_cache()
 
-        registered_for_email = NotificationManager.is_notification_enabled(recipient, 'mail', event)
+        # email
+        if NotificationManager.is_notification_enabled(recipient, 'mail', event):
+            notification.send_mail(request)
 
-        if registered_for_email:
-            EmailManager.send_mail(request, recipient, event, actor, object, target, details, hash)
+        # push
+        if NotificationManager.is_notification_enabled(recipient, 'push', event):
+            notification.push(request)
 
     @staticmethod
     def get_description(event, actor, object, target, pass_variables=True):

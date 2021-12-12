@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import models
 from django.utils.translation import ugettext_lazy as _, get_language, ugettext
-from whistle.managers import NotificationQuerySet, NotificationManager
+from whistle.managers import NotificationQuerySet, NotificationManager, EmailManager
 from whistle import settings as whistle_settings
 
 try:
@@ -116,3 +116,59 @@ class Notification(models.Model):
         cache.set(cache_key, url, version=cache_version, timeout=whistle_settings.TIMEOUT)
 
         return url
+
+    def send_mail(self, request=None):
+        EmailManager.send_mail(
+            request=request,
+            recipient=self.recipient,
+            event=self.event,
+            actor=self.actor,
+            object=self.object,
+            target=self.target,
+            details=self.details,
+            hash=self.hash
+        )
+
+    def push(self, request):
+        from fcm_django.models import FCMDevice
+        from firebase_admin.messaging import Notification, Message, \
+            AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig
+
+        for device in self.recipient.fcmdevice_set.all():
+            data = {}
+            for data_attr in ['object_id', 'target_id', 'object_content_type', 'target_content_type']:
+                value = getattr(self, data_attr)
+
+                if value:
+                    data[data_attr] = '.'.join(value.natural_key()) if isinstance(value, ContentType) else str(value)
+
+            # from objprint import op
+            # op(data)
+
+            result = device.send_message(
+                Message(
+                    notification=Notification(
+                        title=self.short_description(),
+                        body=str(self.object),
+                        # image="image_url"
+                    ),
+                    data=data,
+                    android=AndroidConfig(
+                        collapse_key=f'{self.event}_{self.object_id}',
+                        priority="high",
+                        notification=AndroidNotification(
+                            click_action=self.event,
+                            sound="default"
+                        )
+                    ),
+                    apns=APNSConfig(
+                        payload=APNSPayload(
+                            aps=Aps(
+                                badge=self.recipient.unread_notifications.count(),
+                                category=self.event
+                            )
+                        )
+                    )
+                )
+            )
+            # op(result)

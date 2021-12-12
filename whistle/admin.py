@@ -8,7 +8,7 @@ from whistle.models import Notification
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'send_email']
+    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'send_email', 'push']
     date_hierarchy = 'created'
     list_select_related = ('recipient', 'actor')
     list_display = ('__str__', 'recipient', 'actor', 'is_read', 'created')
@@ -55,14 +55,10 @@ class NotificationAdmin(admin.ModelAdmin):
 
     def send_email(self, request, queryset):
         for notification in queryset:
-            EmailManager.send_mail(
-                request=request,
-                recipient=notification.recipient,
-                event=notification.event,
-                actor=notification.actor,
-                object=notification.object,
-                target=notification.target,
-                details=notification.details,
-                hash=notification.hash
-            )
+            notification.send_mail(request)
     send_email.short_description = _('Send email')
+
+    def push(self, request, queryset):
+        for notification in queryset:
+            notification.push(request)
+    push.short_description = _('Push')
