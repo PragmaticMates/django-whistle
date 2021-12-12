@@ -2,8 +2,7 @@
 {% blocktrans %}Hi {{ recipient }},
 
 {{ description }}
-
+{% endblocktrans %}
 {% if details %}
 {% trans 'Details' %}: {{ details }}
 {% endif %}
-{% endblocktrans %}
