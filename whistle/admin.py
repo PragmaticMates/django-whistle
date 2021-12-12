@@ -2,12 +2,13 @@ from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.utils.translation import ugettext_lazy as _, ngettext
 from whistle.forms import NotificationAdminForm
+from whistle.managers import EmailManager
 from whistle.models import Notification
 
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache']
+    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'send_email']
     date_hierarchy = 'created'
     list_select_related = ('recipient', 'actor')
     list_display = ('__str__', 'recipient', 'actor', 'is_read', 'created')
@@ -50,5 +51,18 @@ class NotificationAdmin(admin.ModelAdmin):
             for recipient in recipients:
                 recipient.clear_unread_notifications_cache()
             self.message_user(request, _('Unread notifications cache cleared'))
-
     clear_unread_notifications_cache.short_description = _('Clear unread notifications cache')
+
+    def send_email(self, request, queryset):
+        for notification in queryset:
+            EmailManager.send_mail(
+                request=request,
+                recipient=notification.recipient,
+                event=notification.event,
+                actor=notification.actor,
+                object=notification.object,
+                target=notification.target,
+                details=notification.details,
+                hash=notification.hash
+            )
+    send_email.short_description = _('Send email')
