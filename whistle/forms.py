@@ -6,7 +6,7 @@ from crispy_forms.layout import Div, HTML, Field, Layout, Submit
 from django import forms
 from django.utils.translation import ugettext_lazy as _, ugettext
 
-from whistle.managers import NoticeManager
+from whistle.managers import NotificationManager
 from whistle.models import Notification
 from whistle import settings as whistle_settings
 
@@ -37,9 +37,9 @@ class NotificationAdminForm(forms.ModelForm):
         return self.cleaned_data
 
 
-class EditNoticesForm(forms.Form):
+class NotificationSettingsForm(forms.Form):
     def __init__(self, user, *args, **kwargs):
-        super(EditNoticesForm, self).__init__(*args, **kwargs)
+        super(NotificationSettingsForm, self).__init__(*args, **kwargs)
         self.user = user
         self.init_fields()
         self.init_form_helper()
@@ -60,20 +60,24 @@ class EditNoticesForm(forms.Form):
 
         return events
 
+    def field_names(self, event):
+        event_identifier = event.lower()
+
+        return {
+            'web': 'web_{}'.format(event_identifier),
+            'mail': 'mail_{}'.format(event_identifier),
+            'push': 'push_{}'.format(event_identifier)
+        }
+
     def get_initial_value(self, channel, event):
-        return NoticeManager.is_notice_allowed(self.user, channel, event)
+        return NotificationManager.is_notification_enabled(self.user, channel, event)
 
     def init_fields(self):
         for event, label in self.labels.items():
-            event_identifier = event.lower()
-            field_names = {
-                'web': 'notification_{}'.format(event_identifier),  # TODO: migrate 'notification' to 'web'
-                'mail': 'mail_{}'.format(event_identifier),
-                'push': 'push_{}'.format(event_identifier)
-            }
+            field_names = self.field_names(event)
 
             self.fields.update({
-                field_names['web']: forms.BooleanField(label=_('Web'), required=False, initial=self.get_initial_value('notification', event)),  # TODO: migrate 'notification' to 'web'
+                field_names['web']: forms.BooleanField(label=_('Web'), required=False, initial=self.get_initial_value('web', event)),
                 field_names['mail']: forms.BooleanField(label=_('Mail'), required=False, initial=self.get_initial_value('mail', event)),
                 field_names['push']: forms.BooleanField(label=_('Push'), required=False, initial=self.get_initial_value('push', event))
             })
@@ -82,19 +86,21 @@ class EditNoticesForm(forms.Form):
         fields = []
 
         for event, label in self.labels.items():
-            event_identifier = event.lower()
+            field_names = self.field_names(event)
 
-            field_names = {
-                'web': 'notification_{}'.format(event_identifier),  # TODO: migrate 'notification' to 'web'
-                'mail': 'mail_{}'.format(event_identifier),
-                'push': 'push_{}'.format(event_identifier)
-            }
+            event_fields = [
+                Div(Field(field_names['web'], css_class='switch'), css_class='col-md'),
+                Div(Field(field_names['mail'], css_class='switch'), css_class='col-md'),
+            ]
+
+            if whistle_settings.PUSH_NOTIFICATIONS_ENABLED:
+                event_fields.append(
+                    Div(Field(field_names['push'], css_class='switch'), css_class='col-md')
+                )
 
             field = Div(
                 Div(HTML('<p>{}</p>'.format(label)), css_class='col-md-6'),
-                Div(Field(field_names['web'], css_class='switch'), css_class='col-md'),
-                Div(Field(field_names['mail'], css_class='switch'), css_class='col-md'),
-                Div(Field(field_names['push'], css_class='switch'), css_class='col-md'),
+                *event_fields,
                 css_class='row'
             )
 
@@ -107,22 +113,17 @@ class EditNoticesForm(forms.Form):
         )
 
         self.helper = FormHelper()
-        self.helper.form_class = 'notices-settings'
+        self.helper.form_class = 'notification-settings'
         self.helper.layout = Layout(*fields)
 
     def clean(self):
-        settings = {'mail': {}, 'notification': {}, 'push': {}}  # TODO: migrate 'notification' to 'web'
+        settings = {'mail': {}, 'web': {}, 'push': {}}
 
         for event in self.labels.keys():
+            field_names = self.field_names(event)
             event_identifier = event.lower()
 
-            field_names = {
-                'web': 'notification_{}'.format(event_identifier),  # TODO: migrate 'notification' to 'web'
-                'mail': 'mail_{}'.format(event_identifier),
-                'push': 'push_{}'.format(event_identifier)
-            }
-
-            settings['notification'][event_identifier] = self.cleaned_data.get(field_names['web'], False)  # TODO: migrate 'notification' to 'web'
+            settings['web'][event_identifier] = self.cleaned_data.get(field_names['web'], False)
             settings['mail'][event_identifier] = self.cleaned_data.get(field_names['mail'], False)
             settings['push'][event_identifier] = self.cleaned_data.get(field_names['push'], False)
 

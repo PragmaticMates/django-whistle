@@ -42,19 +42,19 @@ class NotificationQuerySet(QuerySet):
         )
 
 
-class NoticeManager(object):
+class NotificationManager(object):
     @staticmethod
-    def is_notice_allowed(user, channel, event):
+    def is_notification_enabled(user, channel, event):
         event_identifier = event.lower()
 
-        notices_settings = user.notices_settings
+        notification_settings = user.notification_settings
 
         # support for django-jsonfield which breaks native PostgreSQL functionality
-        if isinstance(notices_settings, str):
-            notices_settings = json.loads(notices_settings)
+        if isinstance(notification_settings, str):
+            notification_settings = json.loads(notification_settings)
 
         try:
-            return notices_settings[channel][event_identifier]
+            return notification_settings[channel][event_identifier]
         except (KeyError, TypeError):
             return True
 
@@ -63,7 +63,7 @@ class NoticeManager(object):
         if not recipient.is_active:
             return
 
-        registered_for_notification = NoticeManager.is_notice_allowed(recipient, 'notification', event)
+        registered_for_notification = NotificationManager.is_notification_enabled(recipient, 'notification', event)
         hash = None
 
         if registered_for_notification:
@@ -84,7 +84,7 @@ class NoticeManager(object):
             # clear user notifications cache
             recipient.clear_unread_notifications_cache()
 
-        registered_for_email = NoticeManager.is_notice_allowed(recipient, 'mail', event)
+        registered_for_email = NotificationManager.is_notification_enabled(recipient, 'mail', event)
 
         if registered_for_email:
             EmailManager.send_mail(request, recipient, event, actor, object, target, details, hash)
@@ -147,10 +147,10 @@ class EmailManager(object):
         recipient_list = [recipient.email]
 
         # description
-        description = NoticeManager.get_description(event, actor, object, target, True)
+        description = NotificationManager.get_description(event, actor, object, target, True)
 
         # subject
-        short_description = NoticeManager.get_description(event, actor, object, target, False)
+        short_description = NotificationManager.get_description(event, actor, object, target, False)
 
         try:
             site = get_current_site(request)

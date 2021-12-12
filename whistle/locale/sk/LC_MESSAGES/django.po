@@ -118,5 +118,5 @@ msgid "^settings/$"
 msgstr "^nastavenia/$"
 
 #: views.py:33
-msgid "Notices settings successfully updated"
-msgstr "Nastavenia oznamov úspešne uložené"
+msgid "Notification settings successfully updated"
+msgstr "Nastavenia notifikácii úspešne uložené"

@@ -11,7 +11,7 @@ from whistle import settings as whistle_settings
 
 
 class UserNotificationsMixin(models.Model):
-    notices_settings = JSONField(blank=True, null=True, default=None)
+    notification_settings = JSONField(blank=True, null=True, default=None)
 
     class Meta:
         abstract = True

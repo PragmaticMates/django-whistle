@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import models
 from django.utils.translation import ugettext_lazy as _, get_language, ugettext
-from whistle.managers import NotificationQuerySet, NoticeManager
+from whistle.managers import NotificationQuerySet, NotificationManager
 from whistle import settings as whistle_settings
 
 try:
@@ -72,7 +72,7 @@ class Notification(models.Model):
             return saved_description
 
         try:
-            description = NoticeManager.get_description(self.event, self.actor, self.object, self.target, pass_variables)
+            description = NotificationManager.get_description(self.event, self.actor, self.object, self.target, pass_variables)
         except KeyError:
             # referenced object does not exist anymore
             if self.pk:

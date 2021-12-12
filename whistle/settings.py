@@ -9,3 +9,4 @@ REDIS_QUEUE = getattr(settings, 'WHISTLE_REDIS_QUEUE', 'default')
 SIGNING_KEY = getattr(settings, 'WHISTLE_SIGNING_KEY', settings.SECRET_KEY)
 SIGNING_SALT = getattr(settings, 'WHISTLE_SIGNING_SALT', 'whistle')
 AUTH_USER_MODEL = getattr(settings, 'WHISTLE_AUTH_USER_MODEL', settings.AUTH_USER_MODEL)
+PUSH_NOTIFICATIONS_ENABLED = 'fcm_django' in settings.INSTALLED_APPS
