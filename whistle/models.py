@@ -3,6 +3,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import models
 from django.utils.translation import ugettext_lazy as _, get_language, ugettext
+
+from pragmatic.helpers import method_overridden
 from whistle.managers import NotificationQuerySet, NotificationManager, EmailManager
 from whistle import settings as whistle_settings
 
@@ -136,7 +138,7 @@ class Notification(models.Model):
 
         for device in self.recipient.fcmdevice_set.all():
             data = {}
-            for data_attr in ['object_id', 'target_id', 'object_content_type', 'target_content_type']:
+            for data_attr in ['id', 'object_id', 'target_id', 'object_content_type', 'target_content_type']:
                 value = getattr(self, data_attr)
 
                 if value:
@@ -149,7 +151,7 @@ class Notification(models.Model):
                 Message(
                     notification=Notification(
                         title=self.short_description(),
-                        body=str(self.object),
+                        body=repr(self.object) if method_overridden(self.object, '__repr__') else str(self.object),
                         # image="image_url"
                     ),
                     data=data,
