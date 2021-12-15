@@ -5,6 +5,8 @@ from whistle.models import Notification
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    description = serializers.CharField()
+    short_description = serializers.CharField()
     object_content_type = ContentTypeSerializer(read_only=True)
     target_content_type = ContentTypeSerializer(read_only=True)
 
