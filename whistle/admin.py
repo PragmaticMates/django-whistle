@@ -27,6 +27,7 @@ class NotificationAdmin(admin.ModelAdmin):
             'count': rows_updated,
         }
 
+        self.clear_unread_notifications_cache(request, queryset)
         self.message_user(request, message)
     make_unread.short_description = _('Make unread')
 
@@ -41,6 +42,7 @@ class NotificationAdmin(admin.ModelAdmin):
             'count': rows_updated,
         }
 
+        self.clear_unread_notifications_cache(request, queryset)
         self.message_user(request, message)
     make_read.short_description = _('Make read')
 
