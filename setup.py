@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='django-whistle',
-    version='2.1.0',
+    version='2.1.1',
     description='Advanced notifications for Django',
     long_description=open('README.md').read(),
     author='Pragmatic Mates',
