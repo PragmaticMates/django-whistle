@@ -49,7 +49,7 @@ class NotificationSettingsForm(forms.Form):
         events = dict(whistle_settings.EVENTS)
 
         for event, label in events.items():
-            pat = re.compile(r'%\(.*\)s|"%\(.*\)s"')
+            pat = re.compile(r'%\(.*\)s|"%\(.*\)s"|%\(.*\)r|"%\(.*\)r"')
             new_label = re.sub(pat, '', ugettext(label))  # remove all variable placeholders
             new_label = new_label.replace("''", '')  # remove all 2 single quotas
             new_label = new_label.replace('""', '')  # remove all 2 double quotas
