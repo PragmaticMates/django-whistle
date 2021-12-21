@@ -76,7 +76,7 @@ class NotificationManager(object):
         )
 
         # web
-        if NotificationManager.is_notification_enabled(recipient, 'notification', event):
+        if NotificationManager.is_notification_enabled(recipient, 'web', event):
             # save notification to DB
             notification.save()
 
