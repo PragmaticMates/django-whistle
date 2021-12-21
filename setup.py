@@ -26,13 +26,16 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Operating System :: OS Independent',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'Framework :: Django',
         'License :: OSI Approved :: BSD License',
-        'Development Status :: 3 - Alpha'
+        'Development Status :: 5 - Production/Stable'
     ],
     license='BSD License',
-    keywords="django notifications notice cache rq redis",
+    keywords="django notifications events push email iOS Android APN FireBase GCM",
 )
