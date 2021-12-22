@@ -1,4 +1,4 @@
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ngettext
 
 from rest_framework import serializers, viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -36,13 +36,23 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
 
-class MarkAllNotificationsAsReadAPIView(APIView):
+class MarkNotificationsAsReadAPIView(APIView):
     permission_classes = [IsAuthenticated]
     operations = ['apply', 'ignore']
 
     def patch(self, request):
+        notification_id = request.GET.get('notification_id', None)
         unread_notifications = request.user.notifications.unread()
+
+        if notification_id:
+            unread_notifications = unread_notifications.filter(id=notification_id)
+
         num_notifications = unread_notifications.count()
         unread_notifications.mark_as_read()
         request.user.clear_unread_notifications_cache()
-        return Response(status=200, data=_(f"{num_notifications} notifications marked as read"))
+
+        return Response(status=200, data=ngettext(
+            '%(count)d notification marked as read',
+            '%(count)d notifications marked as read',
+            num_notifications,
+        ) % {'count': num_notifications})
