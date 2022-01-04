@@ -151,6 +151,7 @@ class Notification(models.Model):
             # from objprint import op
             # op(data)
 
+            # TODO: make it more configurable (using custom hander/[lamda] function)
             if self.details not in EMPTY_VALUES:
                 title = self.description
                 body = self.details

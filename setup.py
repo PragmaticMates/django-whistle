@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 from setuptools import setup
 
+from whistle import VERSION
 
 setup(
     name='django-whistle',
-    version='2.3.0',
+    version=VERSION,
     description='Advanced notifications for Django',
     long_description=open('README.md').read(),
     author='Pragmatic Mates',
