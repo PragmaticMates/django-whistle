@@ -1,6 +1,7 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.utils.translation import ugettext_lazy as _, get_language, ugettext
 
@@ -150,11 +151,21 @@ class Notification(models.Model):
             # from objprint import op
             # op(data)
 
+            if self.details not in EMPTY_VALUES:
+                title = self.description
+                body = self.details
+            elif method_overridden(self.object, '__repr__'):
+                body = repr(self.object)
+                title = self.short_description()
+            else:
+                body = str(self.object)
+                title = self.short_description()
+
             result = device.send_message(
                 Message(
                     notification=Notification(
-                        title=self.short_description(),
-                        body=repr(self.object) if method_overridden(self.object, '__repr__') else str(self.object),
+                        title=title,
+                        body=body,
                         # image="image_url"
                     ),
                     data=data,
