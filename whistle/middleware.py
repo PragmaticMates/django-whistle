@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.generic import DetailView
 
+from whistle import settings as whistle_settings
 from whistle.models import Notification
 
 
@@ -11,7 +12,7 @@ class ReadNotificationMiddleware:
     def __call__(self, request):
         if request.user.is_authenticated:
             # read notification by its id
-            notification_id = request.GET.get('read-notification', None)
+            notification_id = request.GET.get(whistle_settings.URL_PARAM, None)
 
             if notification_id:
                 try:

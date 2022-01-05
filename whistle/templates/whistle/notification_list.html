@@ -18,7 +18,7 @@
                     {% for notification in object_list %}
                         <tr>
                             <td>
-                                <a href="{{ notification.get_absolute_url }}?read-notification={{ notification.id }}">{{ notification }}</a>
+                                <a href="{{ notification.get_absolute_url }}">{{ notification }}</a>
                             </td>
                             <td>
                                 {{ notification.details }}

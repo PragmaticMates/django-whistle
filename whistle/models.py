@@ -108,7 +108,7 @@ class Notification(models.Model):
 
         if not self.is_read:
             # add read-notification param for middleware
-            params = {'read-notification': self.pk}
+            params = {whistle_settings.URL_PARAM: self.pk}
             url_parts = list(urlparse.urlparse(url))
             query = dict(urlparse.parse_qsl(url_parts[4]))
             query.update(params)
