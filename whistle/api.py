@@ -58,7 +58,7 @@ class MarkNotificationsAsReadAPIView(APIView):
     permission_classes = [IsAuthenticated]
     operations = ['apply', 'ignore']
 
-    def patch(self, request):
+    def patch(self, request, *args, **kwargs):
         notification_id = request.GET.get('notification_id', None)
         unread_notifications = request.user.notifications.unread()
 
