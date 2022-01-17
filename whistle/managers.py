@@ -9,6 +9,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.db.models import QuerySet, Q
 from django.template import loader, TemplateDoesNotExist
+from django.utils.module_loading import import_string
 
 from whistle import settings as whistle_settings
 
@@ -45,10 +46,13 @@ class NotificationQuerySet(QuerySet):
 class NotificationManager(object):
     @staticmethod
     def is_notification_available(user, channel, event):
-        notification_availability_handler = whistle_settings.URL_HANDLER
+        handler = whistle_settings.AVAILABILITY_HANDLER
 
-        if notification_availability_handler:
-            return notification_availability_handler(user, channel, event)
+        if handler:
+            if isinstance(handler, str):
+                handler = import_string(handler)
+
+            return handler(user, channel, event)
 
         return channel in whistle_settings.CHANNELS
 

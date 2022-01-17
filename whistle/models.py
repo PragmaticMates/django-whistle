@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.core.validators import EMPTY_VALUES
 from django.db import models
+from django.utils.module_loading import import_string
 from django.utils.translation import ugettext_lazy as _, get_language, ugettext
 
 from pragmatic.helpers import method_overridden
@@ -104,6 +105,9 @@ class Notification(models.Model):
         url_handler = whistle_settings.URL_HANDLER
 
         if url_handler:
+            if isinstance(url_handler, str):
+                url_handler = import_string(url_handler)
+
             url = url_handler(url, self)
 
         if not self.is_read:
