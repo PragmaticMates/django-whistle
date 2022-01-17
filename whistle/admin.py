@@ -1,6 +1,7 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.utils.translation import ugettext_lazy as _, ngettext
+from whistle import settings as whistle_settings
 from whistle.forms import NotificationAdminForm
 from whistle.managers import EmailManager
 from whistle.models import Notification
@@ -56,11 +57,19 @@ class NotificationAdmin(admin.ModelAdmin):
     clear_unread_notifications_cache.short_description = _('Clear unread notifications cache')
 
     def send_email(self, request, queryset):
+        if 'mail' not in whistle_settings.CHANNELS:
+            messages.error(request, _('Mail channel is disabled'))
+            return
+
         for notification in queryset:
             notification.send_mail(request)
     send_email.short_description = _('Send email')
 
     def push(self, request, queryset):
+        if 'push' not in whistle_settings.CHANNELS:
+            messages.error(request, _('Push channel is disabled'))
+            return
+
         for notification in queryset:
             notification.push(request)
     push.short_description = _('Push')

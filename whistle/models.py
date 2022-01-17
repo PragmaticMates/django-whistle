@@ -162,9 +162,6 @@ class Notification(models.Model):
         }
 
     def push(self, request):
-        if not whistle_settings.PUSH_NOTIFICATIONS_ENABLED:
-            return
-
         from fcm_django.models import FCMDevice
         from firebase_admin.messaging import Notification, Message, \
             AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig

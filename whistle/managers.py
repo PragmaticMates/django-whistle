@@ -44,7 +44,19 @@ class NotificationQuerySet(QuerySet):
 
 class NotificationManager(object):
     @staticmethod
+    def is_notification_available(user, channel, event):
+        notification_availability_handler = whistle_settings.URL_HANDLER
+
+        if notification_availability_handler:
+            return notification_availability_handler(user, channel, event)
+
+        return channel in whistle_settings.CHANNELS
+
+    @staticmethod
     def is_notification_enabled(user, channel, event):
+        if not NotificationManager.is_notification_available(user, channel, event):
+            return False
+
         event_identifier = event.lower()
 
         notification_settings = user.notification_settings

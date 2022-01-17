@@ -87,24 +87,21 @@ class NotificationSettingsForm(forms.Form):
 
         for event, label in self.labels.items():
             field_names = self.field_names(event)
+            event_fields = []
 
-            event_fields = [
-                Div(Field(field_names['web'], css_class='switch'), css_class='col-md'),
-                Div(Field(field_names['mail'], css_class='switch'), css_class='col-md'),
-            ]
+            for channel in whistle_settings.CHANNELS:
+                if NotificationManager.is_notification_available(self.user, channel, event):
+                    event_fields.append(
+                        Div(Field(field_names[channel], css_class='switch'), css_class='col-md')
+                    )
 
-            if whistle_settings.PUSH_NOTIFICATIONS_ENABLED:
-                event_fields.append(
-                    Div(Field(field_names['push'], css_class='switch'), css_class='col-md')
+            if len(event_fields) > 0:
+                fields.append(Div(
+                        Div(HTML('<p>{}</p>'.format(label)), css_class='col-md-6'),
+                        *event_fields,
+                        css_class='row'
+                    )
                 )
-
-            field = Div(
-                Div(HTML('<p>{}</p>'.format(label)), css_class='col-md-6'),
-                *event_fields,
-                css_class='row'
-            )
-
-            fields.append(field)
 
         fields.append(
             FormActions(
