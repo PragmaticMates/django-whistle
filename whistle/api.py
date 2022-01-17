@@ -9,11 +9,29 @@ from pragmatic.serializers import ContentTypeSerializer
 from whistle.models import Notification
 
 
+class PushSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = []
+
+    def to_internal_value(self, data):
+        return {
+            'body': 'test',
+            'title': 'skuska',
+            # 'image': ''
+        }
+
+    def to_representation(self, instance):
+        # return '.'.join(instance.natural_key())
+        pass
+
+
 class NotificationSerializer(serializers.ModelSerializer):
     description = serializers.CharField()
     short_description = serializers.CharField()
     object_content_type = ContentTypeSerializer(read_only=True)
     target_content_type = ContentTypeSerializer(read_only=True)
+    push_config = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Notification

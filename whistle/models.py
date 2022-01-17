@@ -132,6 +132,35 @@ class Notification(models.Model):
             hash=self.hash
         )
 
+    @property
+    def push_config(self):
+        # TODO: make it more configurable (using custom handler/[lambda] function)
+        if self.details not in EMPTY_VALUES:
+            title = self.description
+            body = self.details
+        elif method_overridden(self.object, '__repr__'):
+            title = self.short_description()
+            body = repr(self.object)
+        else:
+            title = self.short_description()
+            body = str(self.object)
+
+        return {
+            'title': title,
+            'body': body,
+            # 'image_url': TODO,
+            'android': {
+                'collapse_key': f'{self.event}_{self.object_id}',
+                'priority': 'high',
+                'click_action': self.event,
+                'sound': 'default'
+            },
+            'apns': {
+                'category': self.event,
+                'sound': 'default'
+            }
+        }
+
     def push(self, request):
         if not whistle_settings.PUSH_NOTIFICATIONS_ENABLED:
             return
@@ -151,39 +180,28 @@ class Notification(models.Model):
             # from objprint import op
             # op(data)
 
-            # TODO: make it more configurable (using custom hander/[lamda] function)
-            if self.details not in EMPTY_VALUES:
-                title = self.description
-                body = self.details
-            elif method_overridden(self.object, '__repr__'):
-                body = repr(self.object)
-                title = self.short_description()
-            else:
-                body = str(self.object)
-                title = self.short_description()
-
             result = device.send_message(
                 Message(
                     notification=Notification(
-                        title=title,
-                        body=body,
-                        # image="image_url"
+                        title=self.push_config['title'],
+                        body=self.push_config['body'],
+                        # image=self.push_data['image_url']"
                     ),
                     data=data,
                     android=AndroidConfig(
-                        collapse_key=f'{self.event}_{self.object_id}',
-                        priority="high",
+                        collapse_key=self.push_config['android']['collapse_key'],
+                        priority=self.push_config['android']['priority'],
                         notification=AndroidNotification(
-                            click_action=self.event,
-                            sound="default"
+                            click_action=self.push_config['android']['click_action'],
+                            sound=self.push_config['android']['sound']
                         )
                     ),
                     apns=APNSConfig(
                         payload=APNSPayload(
                             aps=Aps(
                                 badge=self.recipient.unread_notifications.count(),
-                                category=self.event,
-                                sound="default"
+                                category=self.push_config['apns']['category'],
+                                sound=self.push_config['apns']['sound']
                             )
                         )
                     )
