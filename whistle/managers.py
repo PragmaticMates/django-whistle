@@ -45,7 +45,11 @@ class NotificationQuerySet(QuerySet):
 
 class NotificationManager(object):
     @staticmethod
-    def is_notification_available(user, channel, event=None):
+    def is_channel_available(user, channel):
+        return NotificationManager.is_notification_available(user, channel, event=None)
+
+    @staticmethod
+    def is_notification_available(user, channel, event):
         handler = whistle_settings.AVAILABILITY_HANDLER
 
         if handler:
@@ -57,7 +61,11 @@ class NotificationManager(object):
         return channel in whistle_settings.CHANNELS
 
     @staticmethod
-    def is_notification_enabled(user, channel, event=None, bypass_channel=False):
+    def is_channel_enabled(user, channel):
+        return NotificationManager.is_notification_enabled(user, channel, event=None)
+
+    @staticmethod
+    def is_notification_enabled(user, channel, event, bypass_channel=False):
         notification_settings = user.notification_settings
 
         # support for django-jsonfield which breaks native PostgreSQL functionality
@@ -74,7 +82,7 @@ class NotificationManager(object):
                 return True
 
         # checking channel settings at first (higher priority)
-        if not NotificationManager.is_notification_enabled(user, channel) and not bypass_channel:
+        if not NotificationManager.is_channel_enabled(user, channel) and not bypass_channel:
             return False
 
         event_identifier = event.lower()
