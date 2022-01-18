@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
 
 EVENTS = getattr(settings, 'WHISTLE_NOTIFICATION_EVENTS', [])
-CHANNELS = getattr(settings, 'WHISTLE_CHANNELS', ['web', 'mail'])  # TODO: refactor mail to email?
+CHANNELS = getattr(settings, 'WHISTLE_CHANNELS', ['web', 'email'])
 AVAILABILITY_HANDLER = getattr(settings, 'WHISTLE_AVAILABILITY_HANDLER', None)
 URL_HANDLER = getattr(settings, 'WHISTLE_URL_HANDLER', None)
 URL_PARAM = getattr(settings, 'WHISTLE_URL_PARAM', 'read-notification')

@@ -12,7 +12,7 @@ class NotificationAdmin(admin.ModelAdmin):
     actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'send_email', 'push']
     date_hierarchy = 'created'
     list_select_related = ('recipient', 'actor')
-    list_display = ('__str__', 'recipient', 'actor', 'is_read', 'created')
+    list_display = ('id', '__str__', 'recipient', 'actor', 'is_read', 'created')
     list_filter = ('event', 'is_read')
     raw_id_fields = ('recipient', 'actor')
     form = NotificationAdminForm
@@ -57,8 +57,8 @@ class NotificationAdmin(admin.ModelAdmin):
     clear_unread_notifications_cache.short_description = _('Clear unread notifications cache')
 
     def send_email(self, request, queryset):
-        if 'mail' not in whistle_settings.CHANNELS:
-            messages.error(request, _('Mail channel is disabled'))
+        if 'email' not in whistle_settings.CHANNELS:
+            messages.error(request, _('E-mail channel is disabled'))
             return
 
         for notification in queryset:

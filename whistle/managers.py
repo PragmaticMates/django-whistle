@@ -45,7 +45,7 @@ class NotificationQuerySet(QuerySet):
 
 class NotificationManager(object):
     @staticmethod
-    def is_notification_available(user, channel, event):
+    def is_notification_available(user, channel, event=None):
         handler = whistle_settings.AVAILABILITY_HANDLER
 
         if handler:
@@ -57,21 +57,37 @@ class NotificationManager(object):
         return channel in whistle_settings.CHANNELS
 
     @staticmethod
-    def is_notification_enabled(user, channel, event):
-        if not NotificationManager.is_notification_available(user, channel, event):
-            return False
-
-        event_identifier = event.lower()
-
+    def is_notification_enabled(user, channel, event=None, bypass_channel=False):
         notification_settings = user.notification_settings
 
         # support for django-jsonfield which breaks native PostgreSQL functionality
         if isinstance(notification_settings, str):
             notification_settings = json.loads(notification_settings)
 
+        # checking channel settings (event is empty)
+        if event is None:
+            try:
+                # user channel setting
+                return notification_settings['channels'][channel]
+            except (KeyError, TypeError):
+                # channel enabled by default
+                return True
+
+        # checking channel settings at first (higher priority)
+        if not NotificationManager.is_notification_enabled(user, channel) and not bypass_channel:
+            return False
+
+        event_identifier = event.lower()
+
+        # check if event is available for user
+        if not NotificationManager.is_notification_available(user, channel, event):
+            return False
+
         try:
-            return notification_settings[channel][event_identifier]
+            # user event setting
+            return notification_settings['events'][channel][event_identifier]
         except (KeyError, TypeError):
+            # event enabled by default
             return True
 
     @staticmethod
@@ -100,7 +116,7 @@ class NotificationManager(object):
             recipient.clear_unread_notifications_cache()
 
         # email
-        if NotificationManager.is_notification_enabled(recipient, 'mail', event):
+        if NotificationManager.is_notification_enabled(recipient, 'email', event):
             notification.send_mail(request)
 
         # push

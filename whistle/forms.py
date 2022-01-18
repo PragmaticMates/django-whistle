@@ -65,25 +65,46 @@ class NotificationSettingsForm(forms.Form):
 
         return {
             'web': 'web_{}'.format(event_identifier),
-            'mail': 'mail_{}'.format(event_identifier),
+            'email': 'email_{}'.format(event_identifier),
             'push': 'push_{}'.format(event_identifier)
         }
 
-    def get_initial_value(self, channel, event):
-        return NotificationManager.is_notification_enabled(self.user, channel, event)
+    def get_initial_value(self, channel, event=None):
+        return NotificationManager.is_notification_enabled(self.user, channel, event, bypass_channel=True)
 
     def init_fields(self):
+        self.fields.update({
+            'web': forms.BooleanField(label=_('Web'), required=False, initial=self.get_initial_value('web')),
+            'email': forms.BooleanField(label=_('E-mail'), required=False, initial=self.get_initial_value('web')),
+            'push': forms.BooleanField(label=_('Push'), required=False, initial=self.get_initial_value('web'))
+        })
+
         for event, label in self.labels.items():
             field_names = self.field_names(event)
 
             self.fields.update({
                 field_names['web']: forms.BooleanField(label=_('Web'), required=False, initial=self.get_initial_value('web', event)),
-                field_names['mail']: forms.BooleanField(label=_('Mail'), required=False, initial=self.get_initial_value('mail', event)),
+                field_names['email']: forms.BooleanField(label=_('E-mail'), required=False, initial=self.get_initial_value('email', event)),
                 field_names['push']: forms.BooleanField(label=_('Push'), required=False, initial=self.get_initial_value('push', event))
             })
 
     def init_form_helper(self):
         fields = []
+
+        channel_fields = []
+
+        for channel in whistle_settings.CHANNELS:
+            if NotificationManager.is_notification_available(self.user, channel):
+                channel_fields.append(
+                    Div(Field(channel, css_class='switch'), css_class='channel fw-bold col-md mb-3')
+                )
+
+        fields.append(Div(
+                Div(HTML('<p>{}</p>'.format(_(''))), css_class='col-md'),
+                *channel_fields,
+                css_class='row'
+            )
+        )
 
         for event, label in self.labels.items():
             field_names = self.field_names(event)
@@ -114,14 +135,26 @@ class NotificationSettingsForm(forms.Form):
         self.helper.layout = Layout(*fields)
 
     def clean(self):
-        settings = {'mail': {}, 'web': {}, 'push': {}}
+        settings = {
+            'channels': {
+                'web': self.cleaned_data.get('web', True),
+                'email': self.cleaned_data.get('email', True),
+                'push': self.cleaned_data.get('push', True)
+            },
+            'events': {
+                'email': {},
+                'web': {},
+                'push': {}
+            }
+        }
 
+        # events
         for event in self.labels.keys():
             field_names = self.field_names(event)
             event_identifier = event.lower()
 
-            settings['web'][event_identifier] = self.cleaned_data.get(field_names['web'], False)
-            settings['mail'][event_identifier] = self.cleaned_data.get(field_names['mail'], False)
-            settings['push'][event_identifier] = self.cleaned_data.get(field_names['push'], False)
+            settings['events']['web'][event_identifier] = self.cleaned_data.get(field_names['web'], True)
+            settings['events']['email'][event_identifier] = self.cleaned_data.get(field_names['email'], True)
+            settings['events']['push'][event_identifier] = self.cleaned_data.get(field_names['push'], True)
 
         return settings
