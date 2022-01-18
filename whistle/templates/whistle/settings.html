@@ -2,3 +2,26 @@
 
 <h1>{% trans 'Notification settings' %}</h1>
 {% crispy form %}
+
+<script>
+    ['web', 'email', 'push'].forEach(channel => {
+        var checkbox = document.getElementById('id_' + channel);
+
+        if (checkbox) {
+            set_events(checkbox);
+            checkbox.addEventListener('change', (event) => {
+                set_events(event.currentTarget);
+            });
+        }
+    });
+
+    function set_events(channel) {
+        var events = document.querySelectorAll('*[id^="' + channel.id + '_"]');
+
+        if (channel.checked) {
+            events.forEach(element => element.removeAttribute("disabled"));
+        } else {
+            events.forEach(element => element.setAttribute("disabled", "disabled"));
+        }
+    }
+</script>
