@@ -112,7 +112,7 @@ class NotificationSettingsForm(forms.Form):
                 )
 
         fields.append(Div(
-                Div(HTML('<p>{}</p>'.format(_(''))), css_class='col-md'),
+                Div(HTML('<p>{}</p>'.format(_(''))), css_class='col-md-6'),
                 *channel_fields,
                 css_class='row'
             )
