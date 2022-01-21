@@ -32,18 +32,22 @@ class Command(BaseCommand):
             if hasattr(user_model, possible_field):
                 settings_field = possible_field
 
+        print(f'Notification settings field = {settings_field}')
+
         if settings_field is not None:
             for user in user_model.objects.exclude(**{settings_field: None}):
                 notification_settings = getattr(user, settings_field)
 
-                try:
+                # TODO: channels and events
+
+                if from_channel in notification_settings:
                     if delete:
                         notification_settings[to_channel] = notification_settings.pop(from_channel)
                     else:
                         notification_settings[to_channel] = notification_settings[from_channel]
 
+                    setattr(user, settings_field, notification_settings)
                     user.save(update_fields=[settings_field])
-                except KeyError:
-                    pass
+                else:
+                    print(f'Channel {from_channel} not in notification settings of user {user}')
 
-                # print(user, user.notification_settings)
