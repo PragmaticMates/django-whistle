@@ -56,7 +56,10 @@ class NotificationManager(object):
             if isinstance(handler, str):
                 handler = import_string(handler)
 
-            return handler(user, channel, event)
+            channel_available = handler(user, channel, event=None)
+            event_available = handler(user, channel, event)
+
+            return channel_available and event_available
 
         return channel in whistle_settings.CHANNELS
 
@@ -66,6 +69,10 @@ class NotificationManager(object):
 
     @staticmethod
     def is_notification_enabled(user, channel, event, bypass_channel=False):
+        # check if event is available for user
+        if not NotificationManager.is_notification_available(user, channel, event):
+            return False
+
         notification_settings = user.notification_settings
 
         # support for django-jsonfield which breaks native PostgreSQL functionality
@@ -86,10 +93,6 @@ class NotificationManager(object):
             return False
 
         event_identifier = event.lower()
-
-        # check if event is available for user
-        if not NotificationManager.is_notification_available(user, channel, event):
-            return False
 
         try:
             # user event setting

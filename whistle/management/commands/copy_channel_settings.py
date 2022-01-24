@@ -46,7 +46,7 @@ class Command(BaseCommand):
                     else:
                         notification_settings[to_channel] = notification_settings[from_channel]
 
-                    setattr(user, settings_field, notification_settings)
+                    setattr(user, settings_field, notification_settings)  # Python 3.9.5 bug
                     user.save(update_fields=[settings_field])
                 else:
                     print(f'Channel {from_channel} not in notification settings of user {user}')
