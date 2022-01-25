@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from pragmatic.serializers import ContentTypeSerializer
+from pragmatic.serializers import ContentTypeNaturalField
 from whistle.models import Notification
 
 
@@ -29,8 +29,8 @@ class PushSerializer(serializers.ModelSerializer):
 class NotificationSerializer(serializers.ModelSerializer):
     description = serializers.CharField()
     short_description = serializers.CharField()
-    object_content_type = ContentTypeSerializer(read_only=True)
-    target_content_type = ContentTypeSerializer(read_only=True)
+    object_content_type = ContentTypeNaturalField()
+    target_content_type = ContentTypeNaturalField()
     push_config = serializers.JSONField(read_only=True)
 
     class Meta:
