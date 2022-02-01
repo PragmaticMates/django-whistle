@@ -35,7 +35,7 @@ class Command(BaseCommand):
         print(f'Notification settings field = {settings_field}')
 
         if settings_field is not None:
-            for user in user_model.objects.exclude(**{settings_field: None}):
+            for user in user_model.objects.exclude(**{settings_field: None}).only('id', settings_field):
                 notification_settings = getattr(user, settings_field)
 
                 # TODO: channels and events
