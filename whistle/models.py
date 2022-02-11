@@ -170,7 +170,7 @@ class Notification(models.Model):
         from firebase_admin.messaging import Notification, Message, \
             AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig
 
-        for device in self.recipient.fcmdevice_set.all():
+        for device in self.recipient.fcmdevice_set.filter(active=True):
             data = {}
             for data_attr in ['id', 'object_id', 'target_id', 'object_content_type', 'target_content_type']:
                 value = getattr(self, data_attr)
