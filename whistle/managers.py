@@ -139,9 +139,9 @@ class NotificationManager(object):
         event_template = dict(whistle_settings.EVENTS).get(event)
 
         event_context = {
-            'actor': actor,
-            'object': object,
-            'target': target,
+            'actor': actor if actor else '',
+            'object': object if object else '',
+            'target': target if target else '',
         } if pass_variables else {
             'actor': '',
             'object': '',
@@ -158,11 +158,11 @@ class NotificationManager(object):
 
         description = event_template % event_context
 
-        if not pass_variables:
-            description = description.replace("''", '')   # remove all 2 single quotas
-            description = description.replace('""', '')   # remove all 2 double quotas
-            description = description.strip(' :.')         # remove trailing spaces and semicolons
-            description = re.sub(' +', ' ', description)  # remove all multiple spaces
+        description = description.replace("''", '')   # remove all 2 single quotas
+        description = description.replace('""', '')   # remove all 2 double quotas
+        description = description.strip(' :.')         # remove trailing spaces and semicolons
+        description = re.sub(' +', ' ', description)  # remove all multiple spaces
+
         return description
 
 

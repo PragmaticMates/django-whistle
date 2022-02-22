@@ -65,14 +65,14 @@ class Notification(models.Model):
     def short_description(self):
         return self.get_description(False)
 
-    def get_description(self, pass_variables):
+    def get_description(self, pass_variables, bypass_cache=False):
         language = get_language()
 
         cache_key = self.__class__.__name__.lower()
         cache_version = '{}_{}_{}'.format(self.pk, language, pass_variables)
         saved_description = cache.get(cache_key, version=cache_version)
 
-        if saved_description is not None:
+        if saved_description is not None and not bypass_cache:
             return saved_description
 
         try:
@@ -87,6 +87,12 @@ class Notification(models.Model):
         cache.set(cache_key, description, version=cache_version, timeout=whistle_settings.TIMEOUT)
 
         return description
+
+    def resave_description(self):
+        return {
+            'long': self.get_description(pass_variables=True, bypass_cache=True),
+            'short': self.get_description(pass_variables=False, bypass_cache=True),
+        }
 
     def get_absolute_url(self):
         language = get_language()

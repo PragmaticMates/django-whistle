@@ -1,6 +1,8 @@
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.utils.translation import ugettext_lazy as _, ngettext
+from icecream import ic
+
 from whistle import settings as whistle_settings
 from whistle.forms import NotificationAdminForm
 from whistle.managers import EmailManager
@@ -9,7 +11,7 @@ from whistle.models import Notification
 
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
-    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'send_email', 'push']
+    actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'resave_description', 'send_email', 'push', '']
     date_hierarchy = 'created'
     list_select_related = ('recipient', 'actor')
     list_display = ('id', '__str__', 'recipient', 'actor', 'is_read', 'created')
@@ -64,6 +66,11 @@ class NotificationAdmin(admin.ModelAdmin):
         for notification in queryset:
             notification.send_mail(request)
     send_email.short_description = _('Send email')
+
+    def resave_description(self, request, queryset):
+        for notification in queryset:
+            ic(notification.resave_description())
+    resave_description.short_description = _('Resave description')
 
     def push(self, request, queryset):
         if 'push' not in whistle_settings.CHANNELS:
