@@ -33,8 +33,11 @@ class NotificationSettingsView(LoginRequiredMixin, FormView):
     success_url = reverse_lazy('notifications:settings')  # TODO: configurable
     template_name = 'whistle/settings.html'
 
+    def get_user(self):
+        return self.request.user
+
     def form_valid(self, form):
-        user = self.request.user
+        user = self.get_user()
         user.notification_settings = form.cleaned_data
         user.save(update_fields=['notification_settings'])
         messages.success(self.request, _('Notification settings successfully updated'))
@@ -42,7 +45,7 @@ class NotificationSettingsView(LoginRequiredMixin, FormView):
 
     def get_form_kwargs(self):
         form_kwargs = super(NotificationSettingsView, self).get_form_kwargs()
-        form_kwargs['user'] = self.request.user
+        form_kwargs['user'] = self.get_user()
         return form_kwargs
 
 
