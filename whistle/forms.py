@@ -49,10 +49,12 @@ class NotificationSettingsForm(forms.Form):
         events = dict(whistle_settings.EVENTS)
 
         for event, label in events.items():
+            # TODO: move to another static method (helper)
             pat = re.compile(r'%\(.*\)s|"%\(.*\)s"|%\(.*\)r|"%\(.*\)r"')
             new_label = re.sub(pat, '', ugettext(label))  # remove all variable placeholders
             new_label = new_label.replace("''", '')  # remove all 2 single quotas
             new_label = new_label.replace('""', '')  # remove all 2 double quotas
+            new_label = new_label.replace('()', '')  # remove empty braces
             new_label = new_label.strip(' :.')  # remove trailing spaces and semicolons
             new_label = re.sub(' +', ' ', new_label)  # remove all multiple spaces
 
