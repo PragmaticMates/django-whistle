@@ -158,6 +158,7 @@ class NotificationManager(object):
 
         description = event_template % event_context
 
+        # TODO: move to another static method (helper)
         description = description.replace("''", '')   # remove all 2 single quotas
         description = description.replace('""', '')   # remove all 2 double quotas
         description = description.replace('()', '')   # remove empty braces

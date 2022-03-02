@@ -150,10 +150,10 @@ class Notification(models.Model):
             body = self.details
         elif method_overridden(self.object, '__repr__'):
             title = self.short_description()
-            body = repr(self.object)
+            body = repr(self.object) if self.object else ''
         else:
             title = self.short_description()
-            body = str(self.object)
+            body = str(self.object) if self.object else ''
 
         return {
             'title': title,
