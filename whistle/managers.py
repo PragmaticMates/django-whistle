@@ -11,6 +11,7 @@ from django.core.mail import send_mail
 from django.db.models import QuerySet, Q
 from django.template import loader, TemplateDoesNotExist
 from django.utils.module_loading import import_string
+from django.utils.timezone import now
 
 from whistle import settings as whistle_settings
 
@@ -42,6 +43,12 @@ class NotificationQuerySet(QuerySet):
             Q(object_content_type=ContentType.objects.get_for_model(obj), object_id=obj.id) |
             Q(target_content_type=ContentType.objects.get_for_model(obj), target_id=obj.id)
         )
+
+    def old(self, threshold=whistle_settings.OLD_THRESHOLD):
+        if threshold is None:
+            return self.none()
+
+        return self.filter(created__lt=now()-threshold)
 
 
 class NotificationManager(object):
@@ -168,6 +175,7 @@ class NotificationManager(object):
 
         description = event_template % event_context
 
+        # TODO: move to another static method (helper)
         description = description.replace("''", '')   # remove all 2 single quotas
         description = description.replace('""', '')   # remove all 2 double quotas
         description = description.replace('()', '')   # remove empty braces
