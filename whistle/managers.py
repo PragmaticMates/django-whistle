@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import json
 import re
+import django.dispatch
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
@@ -44,6 +45,9 @@ class NotificationQuerySet(QuerySet):
 
 
 class NotificationManager(object):
+    notification_emailed = django.dispatch.Signal()
+    notification_pushed = django.dispatch.Signal()
+
     @staticmethod
     def is_channel_available(user, channel):
         return NotificationManager.is_notification_available(user, channel, event=None)
@@ -129,10 +133,16 @@ class NotificationManager(object):
         # email
         if NotificationManager.is_notification_enabled(recipient, 'email', event):
             notification.send_mail(request)
+            NotificationManager.notification_emailed.send(
+                sender=NotificationManager, notification=notification, request=request,
+            )
 
         # push
         if NotificationManager.is_notification_enabled(recipient, 'push', event):
             notification.push(request)
+            NotificationManager.notification_pushed.send(
+                sender=NotificationManager, notification=notification,
+            )
 
     @staticmethod
     def get_description(event, actor, object, target, pass_variables=True):
@@ -174,6 +184,19 @@ class EmailManager(object):
         Send email notification about a new event to its recipient
         """
 
+        html_message, message, recipient_list, subject = EmailManager.prepare_email(actor, details, event, hash, object, recipient, request, target)
+
+        if whistle_settings.USE_RQ:
+            # use background task to release main thread
+            from whistle.helpers import send_mail_in_background
+            send_mail_in_background.delay(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
+        else:
+            # send mail in main thread
+            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
+
+    # TODO: Improve
+    @staticmethod
+    def prepare_email(actor, details, event, hash, object, recipient, request, target):
         # template
         try:
             t = loader.get_template('whistle/mails/{}.txt'.format(event.lower()))
@@ -240,10 +263,4 @@ class EmailManager(object):
         else:
             html_message = None
 
-        if whistle_settings.USE_RQ:
-            # use background task to release main thread
-            from whistle.helpers import send_mail_in_background
-            send_mail_in_background.delay(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
-        else:
-            # send mail in main thread
-            send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
+        return html_message, message, recipient_list, subject
