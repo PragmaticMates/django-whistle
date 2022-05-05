@@ -251,7 +251,8 @@ class EmailManager(object):
             'target': target,
             'details': details,
             'event': event,
-            'hash': hash
+            'hash': hash,
+            'settings': settings
         }
 
         if object:
