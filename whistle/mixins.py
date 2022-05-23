@@ -20,7 +20,12 @@ class UserNotificationsMixin(models.Model):
     def unread_notifications(self):
         cache_key = 'user_unread_notifications'
         cache_version = self.pk
-        saved_notifications = cache.get(cache_key, version=cache_version)
+
+        try:
+            saved_notifications = cache.get(cache_key, version=cache_version)
+        except LookupError:
+            # app models could change
+            saved_notifications = None
 
         if saved_notifications is not None:
             return saved_notifications
