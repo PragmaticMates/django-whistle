@@ -50,6 +50,12 @@ class NotificationQuerySet(QuerySet):
 
         return self.filter(created__lt=now()-threshold)
 
+    def not_old(self, threshold=whistle_settings.OLD_THRESHOLD):
+        if threshold is None:
+            return self.all()
+
+        return self.filter(created__gte=now()-threshold)
+
 
 class NotificationManager(object):
     notification_emailed = django.dispatch.Signal()

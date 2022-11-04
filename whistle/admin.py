@@ -8,13 +8,33 @@ from whistle.managers import EmailManager
 from whistle.models import Notification
 
 
+class OldListFilter(admin.SimpleListFilter):
+    title = _('old')
+    parameter_name = 'old'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', _('yes')),
+            ('no', _('no')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.old()
+
+        if self.value() == 'no':
+            return queryset.not_old()
+
+        return queryset
+
+
 @admin.register(Notification)
 class NotificationAdmin(admin.ModelAdmin):
     actions = ['make_unread', 'make_read', 'clear_unread_notifications_cache', 'resave_description', 'send_email', 'push', '']
     date_hierarchy = 'created'
     list_select_related = ('recipient', 'actor')
     list_display = ('id', '__str__', 'recipient', 'actor', 'is_read', 'created')
-    list_filter = ('event', 'is_read')
+    list_filter = ('is_read', OldListFilter, 'event')
     raw_id_fields = ('recipient', 'actor')
     form = NotificationAdminForm
 
