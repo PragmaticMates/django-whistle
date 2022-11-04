@@ -1,7 +1,6 @@
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
 from django.utils.translation import ugettext_lazy as _, ngettext
-from icecream import ic
 
 from whistle import settings as whistle_settings
 from whistle.forms import NotificationAdminForm
@@ -69,7 +68,7 @@ class NotificationAdmin(admin.ModelAdmin):
 
     def resave_description(self, request, queryset):
         for notification in queryset:
-            ic(notification.resave_description())
+            print(notification.resave_description())
     resave_description.short_description = _('Resave description')
 
     def push(self, request, queryset):
