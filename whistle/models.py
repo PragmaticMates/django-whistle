@@ -206,7 +206,7 @@ class Notification(models.Model):
                     apns=APNSConfig(
                         payload=APNSPayload(
                             aps=Aps(
-                                badge=self.recipient.unread_notifications.count(),
+                                badge=self.recipient.unread_notifications_count,
                                 category=self.push_config['apns']['category'],
                                 sound=self.push_config['apns']['sound']
                             )

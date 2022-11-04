@@ -11,14 +11,31 @@ from whistle import settings as whistle_settings
 
 
 class UserNotificationsMixin(models.Model):
+    CACHE_KEY = 'user_unread_notifications'
+
     notification_settings = JSONField(blank=True, null=True, default=None)
 
     class Meta:
         abstract = True
 
     @property
+    def unread_notifications_count(self):
+        cache_key = self.CACHE_KEY
+        cache_version = self.pk
+
+        try:
+            saved_unread_notifications = cache.get(cache_key, version=cache_version)
+            if saved_unread_notifications is not None:
+                # return saved_unread_notifications.count()
+                return len(saved_unread_notifications)
+        except LookupError:
+            pass
+
+        return self.notifications.unread().count()
+
+    @property
     def unread_notifications(self):
-        cache_key = 'user_unread_notifications'
+        cache_key = self.CACHE_KEY
         cache_version = self.pk
 
         try:
@@ -59,5 +76,5 @@ class UserNotificationsMixin(models.Model):
         return unread_notifications
 
     def clear_unread_notifications_cache(self):
-        cache_key = 'user_unread_notifications'
+        cache_key = self.CACHE_KEY
         cache.delete(cache_key, version=self.pk)
