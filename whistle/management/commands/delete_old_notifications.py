@@ -1,5 +1,4 @@
 from django.core.management import BaseCommand
-from icecream import ic
 
 from whistle.models import Notification
 from whistle import settings as whistle_settings
