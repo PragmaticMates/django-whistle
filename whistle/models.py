@@ -22,7 +22,7 @@ except:
 
 class Notification(models.Model):
     recipient = models.ForeignKey(whistle_settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
-    event = models.CharField(_('event'), choices=whistle_settings.EVENTS, max_length=32, db_index=True)
+    event = models.CharField(_('event'), choices=whistle_settings.EVENTS, max_length=50, db_index=True)
     actor = models.ForeignKey(whistle_settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
         blank=True, null=True, default=None)
 
