@@ -4,7 +4,22 @@ from django.core.cache import cache
 from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.utils.module_loading import import_string
-from django.utils.translation import ugettext_lazy as _, get_language, ugettext
+
+try:
+    # older Django
+    from django.utils.translation import ugettext_lazy as _
+except ImportError:
+    # Django >= 3
+    from django.utils.translation import gettext_lazy as _
+
+try:
+    # older Django
+    from django.utils.translation import ugettext
+except ImportError:
+    # Django >= 3
+    from django.utils.translation import gettext as ugettext
+
+from django.utils.translation import get_language
 
 from pragmatic.helpers import method_overridden
 from whistle.managers import NotificationQuerySet, NotificationManager, EmailManager
