@@ -9,5 +9,10 @@ def notify(request, recipient, event, actor=None, object=None, target=None, deta
 
 
 @job(whistle_settings.REDIS_QUEUE)
+def notify_in_background(request, recipient, event, actor=None, object=None, target=None, details=''):
+    notify(request, recipient, event, actor=actor, object=object, target=target, details=details)
+
+
+@job(whistle_settings.REDIS_QUEUE)
 def send_mail_in_background(subject, message, from_email, recipient_list, html_message=None, fail_silently=True):
     send_mail(subject, message, from_email, recipient_list, html_message=html_message, fail_silently=fail_silently)
