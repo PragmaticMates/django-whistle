@@ -1,6 +1,14 @@
 from django.contrib import admin, messages
 from django.contrib.auth import get_user_model
-from django.utils.translation import ugettext_lazy as _, ngettext
+
+try:
+    # older Django
+    from django.utils.translation import ugettext_lazy as _
+except ImportError:
+    # Django >= 3
+    from django.utils.translation import gettext_lazy as _
+
+from django.utils.translation import ngettext
 
 from whistle import settings as whistle_settings
 from whistle.forms import NotificationAdminForm
