@@ -121,7 +121,10 @@ class Notification(models.Model):
         try:
             url = '#' if self.object is None else self.object.get_absolute_url()
         except AttributeError:
-            url = '#' if self.target is None else self.target.get_absolute_url()
+            try:
+                url = '#' if self.target is None else self.target.get_absolute_url()
+            except AttributeError:
+                url = '#'
 
         url_handler = whistle_settings.URL_HANDLER
 
