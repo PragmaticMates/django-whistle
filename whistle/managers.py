@@ -193,12 +193,12 @@ class NotificationManager(object):
 
 class EmailManager(object):
     @staticmethod
-    def send_mail(request, recipient, event, actor=None, object=None, target=None, details='', hash=None):
+    def send_mail(notification, request):
         """
         Send email notification about a new event to its recipient
         """
 
-        html_message, message, recipient_list, subject = EmailManager.prepare_email(actor, details, event, hash, object, recipient, request, target)
+        html_message, message, recipient_list, subject = EmailManager.prepare_email(notification, request)
 
         if whistle_settings.USE_RQ:
             # use background task to release main thread
@@ -210,16 +210,16 @@ class EmailManager(object):
 
     # TODO: Improve
     @staticmethod
-    def prepare_email(actor, details, event, hash, object, recipient, request, target):
+    def prepare_email(notification, request):
         # template
         try:
-            t = loader.get_template('whistle/mails/{}.txt'.format(event.lower()))
+            t = loader.get_template('whistle/mails/{}.txt'.format(notification.event.lower()))
         except TemplateDoesNotExist:
-            t = loader.get_template('whistle/mails/new_notification.txt'.format(event.lower()))
+            t = loader.get_template('whistle/mails/new_notification.txt'.format(notification.event.lower()))
 
         # HTML template
         try:
-            t_html = loader.get_template('whistle/mails/{}.html'.format(event.lower()))
+            t_html = loader.get_template('whistle/mails/{}.html'.format(notification.event.lower()))
         except TemplateDoesNotExist:
             try:
                 t_html = loader.get_template('whistle/mails/new_notification.html')
@@ -227,13 +227,13 @@ class EmailManager(object):
                 t_html = None
 
         # recipients
-        recipient_list = [recipient.email]
+        recipient_list = [notification.recipient.email]
 
         # description
-        description = NotificationManager.get_description(event, actor, object, target, True)
+        description = NotificationManager.get_description(notification.event, notification.actor, notification.object, notification.target, True)
 
         # subject
-        short_description = NotificationManager.get_description(event, actor, object, target, False)
+        short_description = NotificationManager.get_description(notification.event, notification.actor, notification.object, notification.target, False)
 
         try:
             site = get_current_site(request)
@@ -251,31 +251,29 @@ class EmailManager(object):
             'description': description,
             'short_description': short_description,
             'request': request,
-            'recipient': recipient,
-            'actor': actor,
-            'object': object,
-            'target': target,
-            'details': details,
-            'event': event,
-            'hash': hash,
+            'recipient': notification.recipient,
+            'actor': notification.actor,
+            'object': notification.object,
+            'target': notification.target,
+            'details': notification.details,
+            'event': notification.event,
+            'hash': notification.hash,
+            'url': notification.get_absolute_url(),
             'settings': settings
         }
 
-        if object:
-            object_content_type = ContentType.objects.get_for_model(object)
-            context[object_content_type.model.lower()] = object
+        if notification.object:
+            object_content_type = ContentType.objects.get_for_model(notification.object)
+            context[object_content_type.model.lower()] = notification.object
 
-        if target:
-            target_content_type = ContentType.objects.get_for_model(target)
-            context[target_content_type.model.lower()] = target
+        if notification.target:
+            target_content_type = ContentType.objects.get_for_model(notification.target)
+            context[target_content_type.model.lower()] = notification.target
 
         # message
         message = t.render(context)
 
         # HTML
-        if t_html:
-            html_message = t_html.render(context)
-        else:
-            html_message = None
+        html_message = t_html.render(context) if t_html else None
 
         return html_message, message, recipient_list, subject

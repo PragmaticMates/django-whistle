@@ -150,14 +150,8 @@ class Notification(models.Model):
 
     def send_mail(self, request=None):
         EmailManager.send_mail(
-            request=request,
-            recipient=self.recipient,
-            event=self.event,
-            actor=self.actor,
-            object=self.object,
-            target=self.target,
-            details=self.details,
-            hash=self.hash
+            notification=self,
+            request=request
         )
 
     @property
