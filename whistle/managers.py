@@ -1,17 +1,18 @@
 from __future__ import unicode_literals
 
 import json
-import re
 import django.dispatch
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.core.validators import EMPTY_VALUES
 from django.db.models import QuerySet, Q
 from django.template import loader, TemplateDoesNotExist
 from django.utils.module_loading import import_string
 from django.utils.timezone import now
+from pragmatic.helpers import method_overridden
 
 from whistle import settings as whistle_settings
 
@@ -37,7 +38,7 @@ class NotificationQuerySet(QuerySet):
             target_content_type=ContentType.objects.get_for_model(target),
             target_id=target.id
         )
-    
+
     def of_object_or_target(self, obj):
         return self.filter(
             Q(object_content_type=ContentType.objects.get_for_model(obj), object_id=obj.id) |
@@ -158,47 +159,149 @@ class NotificationManager(object):
             )
 
     @staticmethod
-    def get_description(event, actor, object, target, pass_variables=True):
-        event_template = dict(whistle_settings.EVENTS).get(event)
-
+    def get_event_context(event, actor, object, target):
         event_context = {
             'actor': actor if actor else '',
             'object': object if object else '',
             'target': target if target else '',
-        } if pass_variables else {
-            'actor': '',
-            'object': '',
-            'target': '',
         }
 
         if object:
             object_content_type = ContentType.objects.get_for_model(object)
-            event_context[object_content_type.model.lower()] = object if pass_variables else ''
+            event_context[object_content_type.model.lower()] = object
 
         if target:
             target_content_type = ContentType.objects.get_for_model(target)
-            event_context[target_content_type.model.lower()] = target if pass_variables else ''
+            event_context[target_content_type.model.lower()] = target
 
+        return event_context
+
+    @staticmethod
+    def get_description(event, actor, object, target, pass_variables=True):
+        event_context = NotificationManager.get_event_context(
+            event=event,
+            actor=actor,
+            object=object,
+            target=target
+        )
+
+        if not pass_variables:
+            for key in event_context:
+                event_context[key] = ''
+
+        event_template = dict(whistle_settings.EVENTS).get(event)
         description = event_template % event_context
 
-        # TODO: move to another static method (helper)
-        description = description.replace("''", '')   # remove all 2 single quotas
-        description = description.replace('""', '')   # remove all 2 double quotas
-        description = description.replace('()', '')   # remove empty braces
-        description = description.strip(' :.')        # remove trailing spaces and semicolons
-        description = re.sub(' +', ' ', description)  # remove all multiple spaces
+        # strip unwanted or duplicated characters
+        from whistle.helpers import strip_unwanted_chars
+        description = strip_unwanted_chars(description)
 
         return description
+
+    @staticmethod
+    def mail_notification(notification, request):
+        return EmailManager.send_mail(
+            request=request,
+            recipient=notification.recipient,
+            event=notification.event,
+            actor=notification.actor,
+            object=notification.object,
+            target=notification.target,
+            details=notification.details,
+            hash=notification.hash,
+            url=notification.get_absolute_url()
+        )
+
+    @staticmethod
+    def get_push_config(notification):
+        if notification.details not in EMPTY_VALUES:
+            title = notification.description
+            body = notification.details
+        elif method_overridden(notification.object, '__repr__'):
+            title = notification.short_description()
+            body = repr(notification.object) if notification.object else ''
+        else:
+            title = notification.short_description()
+            body = str(notification.object) if notification.object else ''
+
+        return {
+            'title': title,
+            'body': body,
+            # 'image_url': TODO,
+            'android': {
+                'collapse_key': f'{notification.event}_{notification.object_id}',
+                'priority': 'high',
+                'click_action': notification.event,
+                'sound': 'default'
+            },
+            'apns': {
+                'category': notification.event,
+                'sound': 'default'
+            }
+        }
+
+    @staticmethod
+    def push_notification(notification, request):
+        from fcm_django.models import FCMDevice
+        from firebase_admin.messaging import Notification, Message, \
+            AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig
+
+        for device in notification.recipient.fcmdevice_set.filter(active=True):
+            data = {}
+            for data_attr in ['id', 'object_id', 'target_id', 'object_content_type', 'target_content_type']:
+                value = getattr(notification, data_attr)
+
+                if value:
+                    data[data_attr] = '.'.join(value.natural_key()) if isinstance(value, ContentType) else str(value)
+
+            # from objprint import op
+            # op(data)
+
+            result = device.send_message(
+                Message(
+                    notification=Notification(
+                        title=notification.push_config['title'],
+                        body=notification.push_config['body'],
+                        # image=self.push_data['image_url']"
+                    ),
+                    data=data,
+                    android=AndroidConfig(
+                        collapse_key=notification.push_config['android']['collapse_key'],
+                        priority=notification.push_config['android']['priority'],
+                        notification=AndroidNotification(
+                            click_action=notification.push_config['android']['click_action'],
+                            sound=notification.push_config['android']['sound']
+                        )
+                    ),
+                    apns=APNSConfig(
+                        payload=APNSPayload(
+                            aps=Aps(
+                                badge=notification.recipient.unread_notifications_count,
+                                category=notification.push_config['apns']['category'],
+                                sound=notification.push_config['apns']['sound']
+                            )
+                        )
+                    )
+                )
+            )
+            # op(result)
+
+            return result
 
 
 class EmailManager(object):
     @staticmethod
-    def send_mail(notification, request):
+    def send_mail(request, recipient, event, **kwargs):
         """
         Send email notification about a new event to its recipient
         """
 
-        html_message, message, recipient_list, subject = EmailManager.prepare_email(notification, request)
+        html_message, message, recipient_list, subject = EmailManager.prepare_email(
+            request=request,
+            recipient=recipient,
+            event=event,
+            **kwargs
+        )
 
         if whistle_settings.USE_RQ:
             # use background task to release main thread
@@ -208,67 +311,49 @@ class EmailManager(object):
             # send mail in main thread
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
 
-    # TODO: Improve
     @staticmethod
-    def prepare_email(notification, request):
-        # template
+    def load_template(template_type, request, recipient, event, **kwargs):
         try:
-            t = loader.get_template('whistle/mails/{}.txt'.format(notification.event.lower()))
-        except TemplateDoesNotExist:
-            t = loader.get_template('whistle/mails/new_notification.txt'.format(notification.event.lower()))
-
-        # HTML template
-        try:
-            t_html = loader.get_template('whistle/mails/{}.html'.format(notification.event.lower()))
+            # event specific template
+            return (
+                loader.get_template('whistle/mails/{}.{}'.format(event.lower(), template_type)),
+                False
+            )
         except TemplateDoesNotExist:
             try:
-                t_html = loader.get_template('whistle/mails/new_notification.html')
+                # default universal template
+                return (
+                    loader.get_template('whistle/mails/new_notification.{}'.format(event.lower(), template_type)),
+                    True
+                )
             except TemplateDoesNotExist:
-                t_html = None
+                return (
+                    None,
+                    None
+                )
+
+    @staticmethod
+    def prepare_email(request, recipient, event, **kwargs):
+        # Load templates
+        t, _ = EmailManager.load_template("txt", request, recipient, event, **kwargs)
+        t_html, _ = EmailManager.load_template("html", request, recipient, event, **kwargs)
 
         # recipients
-        recipient_list = [notification.recipient.email]
+        recipient_list = [recipient.email]
 
-        # description
-        description = NotificationManager.get_description(notification.event, notification.actor, notification.object, notification.target, True)
+        # context
+        context = EmailManager.get_mail_context(request, recipient, event, **kwargs)
 
         # subject
-        short_description = NotificationManager.get_description(notification.event, notification.actor, notification.object, notification.target, False)
-
         try:
             site = get_current_site(request)
 
             subject = '[{}] {}'.format(
                 site.name,
-                short_description  # TODO: add setting if short or long description should be used in subject
+                context['short_description']
             )
         except ObjectDoesNotExist:
-            subject = short_description
-
-        # context
-        context = {
-            'subject': subject,
-            'description': description,
-            'short_description': short_description,
-            'request': request,
-            'recipient': notification.recipient,
-            'actor': notification.actor,
-            'object': notification.object,
-            'target': notification.target,
-            'details': notification.details,
-            'event': notification.event,
-            'hash': notification.hash,
-            'url': notification.get_absolute_url(),
-            'settings': settings
-        }
-
-        if notification.object:
-            object_content_type = ContentType.objects.get_for_model(notification.object)
-            context[object_content_type.model.lower()] = notification.object
-
-        if notification.target:
-            target_content_type = ContentType.objects.get_for_model(notification.target)
-            context[target_content_type.model.lower()] = notification.target
+            subject = context['short_description']
 
         # message
         message = t.render(context)
@@ -277,3 +362,41 @@ class EmailManager(object):
         html_message = t_html.render(context) if t_html else None
 
         return html_message, message, recipient_list, subject
+
+    @staticmethod
+    def get_mail_context(request, recipient, event, **kwargs):
+        actor = kwargs.get('actor', None)
+        object = kwargs.get('object', None)
+        target = kwargs.get('object', None)
+
+        description_kwargs = {
+            'event': event,
+            'actor': actor,
+            'object': object,
+            'target': target
+        }
+
+        # descriptions and subject
+        description = NotificationManager.get_description(**description_kwargs, pass_variables=True)
+        short_description = NotificationManager.get_description(**description_kwargs, pass_variables=False)
+
+        context = kwargs
+
+        context.update({
+            'request': request,
+            'recipient': recipient,
+            'event': event,
+            'description': description,
+            'short_description': short_description,
+            'settings': settings,
+        })
+
+        if object:
+            object_content_type = ContentType.objects.get_for_model(object)
+            context[object_content_type.model.lower()] = object
+
+        if target:
+            target_content_type = ContentType.objects.get_for_model(target)
+            context[target_content_type.model.lower()] = target
+
+        return context

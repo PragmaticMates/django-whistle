@@ -21,8 +21,7 @@ except ImportError:
 
 from django.utils.translation import get_language
 
-from pragmatic.helpers import method_overridden
-from whistle.managers import NotificationQuerySet, NotificationManager, EmailManager
+from whistle.managers import NotificationQuerySet, NotificationManager  # TODO: get manager from config
 from whistle import settings as whistle_settings
 
 try:
@@ -142,88 +141,26 @@ class Notification(models.Model):
             query.update(params)
             url_parts[4] = urlencode(query)
             url = urlparse.urlunparse(url_parts)
-            
+
         # save into cache
         cache.set(cache_key, url, version=cache_version, timeout=whistle_settings.TIMEOUT)
 
         return url
 
+    @property
+    def push_config(self):
+        return NotificationManager.get_push_config(
+            notification=self
+        )
+
     def send_mail(self, request=None):
-        EmailManager.send_mail(
+        return NotificationManager.mail_notification(
             notification=self,
             request=request
         )
 
-    @property
-    def push_config(self):
-        # TODO: make it more configurable (using custom handler/[lambda] function)
-        if self.details not in EMPTY_VALUES:
-            title = self.description
-            body = self.details
-        elif method_overridden(self.object, '__repr__'):
-            title = self.short_description()
-            body = repr(self.object) if self.object else ''
-        else:
-            title = self.short_description()
-            body = str(self.object) if self.object else ''
-
-        return {
-            'title': title,
-            'body': body,
-            # 'image_url': TODO,
-            'android': {
-                'collapse_key': f'{self.event}_{self.object_id}',
-                'priority': 'high',
-                'click_action': self.event,
-                'sound': 'default'
-            },
-            'apns': {
-                'category': self.event,
-                'sound': 'default'
-            }
-        }
-
-    def push(self, request):
-        from fcm_django.models import FCMDevice
-        from firebase_admin.messaging import Notification, Message, \
-            AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig
-
-        for device in self.recipient.fcmdevice_set.filter(active=True):
-            data = {}
-            for data_attr in ['id', 'object_id', 'target_id', 'object_content_type', 'target_content_type']:
-                value = getattr(self, data_attr)
-
-                if value:
-                    data[data_attr] = '.'.join(value.natural_key()) if isinstance(value, ContentType) else str(value)
-
-            # from objprint import op
-            # op(data)
-
-            result = device.send_message(
-                Message(
-                    notification=Notification(
-                        title=self.push_config['title'],
-                        body=self.push_config['body'],
-                        # image=self.push_data['image_url']"
-                    ),
-                    data=data,
-                    android=AndroidConfig(
-                        collapse_key=self.push_config['android']['collapse_key'],
-                        priority=self.push_config['android']['priority'],
-                        notification=AndroidNotification(
-                            click_action=self.push_config['android']['click_action'],
-                            sound=self.push_config['android']['sound']
-                        )
-                    ),
-                    apns=APNSConfig(
-                        payload=APNSPayload(
-                            aps=Aps(
-                                badge=self.recipient.unread_notifications_count,
-                                category=self.push_config['apns']['category'],
-                                sound=self.push_config['apns']['sound']
-                            )
-                        )
-                    )
-                )
-            )
-            # op(result)
+    def push(self, request=None):
+        return NotificationManager.push_notification(
+            notification=self,
+            request=request
+        )
