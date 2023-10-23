@@ -200,6 +200,8 @@ class NotificationManager(object):
 
     @staticmethod
     def mail_notification(notification, request):
+        from whistle.settings import EmailManager
+
         return EmailManager.send_mail(
             request=request,
             recipient=notification.recipient,
@@ -377,6 +379,7 @@ class EmailManager(object):
         }
 
         # descriptions and subject
+        from whistle.settings import NotificationManager
         description = NotificationManager.get_description(**description_kwargs, pass_variables=True)
         short_description = NotificationManager.get_description(**description_kwargs, pass_variables=False)
 

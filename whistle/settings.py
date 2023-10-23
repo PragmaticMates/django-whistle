@@ -19,6 +19,8 @@ OLD_THRESHOLD = getattr(settings, 'WHISTLE_OLD_THRESHOLD', None)
 if 'push' in CHANNELS and 'fcm_django' not in settings.INSTALLED_APPS:
     raise ValueError('fcm_django is required for push notifications. Either install the app or remove push channel from whistle channels')
 
-NOTIFICATION_MANAGER_CLASS = getattr(settings, 'NOTIFICATION_MANAGER_CLASS', 'whistle.managers.NotificationManager')
+NOTIFICATION_MANAGER_CLASS = getattr(settings, 'WHISTLE_NOTIFICATION_MANAGER_CLASS', 'whistle.managers.NotificationManager')
+EMAIL_MANAGER_CLASS = getattr(settings, 'WHISTLE_EMAIL_MANAGER_CLASS', 'whistle.managers.EmailManager')
 
 NotificationManager = import_string(NOTIFICATION_MANAGER_CLASS)
+EmailManager = import_string(EMAIL_MANAGER_CLASS)

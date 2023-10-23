@@ -12,7 +12,6 @@ from django.utils.translation import ngettext
 
 from whistle import settings as whistle_settings
 from whistle.forms import NotificationAdminForm
-from whistle.managers import EmailManager
 from whistle.models import Notification
 
 
