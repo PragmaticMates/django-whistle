@@ -347,15 +347,7 @@ class EmailManager(object):
         context = EmailManager.get_mail_context(request, recipient, event, **kwargs)
 
         # subject
-        try:
-            site = get_current_site(request)
-
-            subject = '[{}] {}'.format(
-                site.name,
-                context['short_description']
-            )
-        except ObjectDoesNotExist:
-            subject = context['short_description']
+        subject = EmailManager.get_mail_subject(request, context)
 
         # message
         message = t.render(context)
@@ -364,6 +356,18 @@ class EmailManager(object):
         html_message = t_html.render(context) if t_html else None
 
         return html_message, message, recipient_list, subject
+
+    @staticmethod
+    def get_mail_subject(request, context):
+        try:
+            site = get_current_site(request)
+
+            return '[{}] {}'.format(
+                site.name,
+                context['short_description']
+            )
+        except ObjectDoesNotExist:
+            return context['short_description']
 
     @staticmethod
     def get_mail_context(request, recipient, event, **kwargs):
