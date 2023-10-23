@@ -1,8 +1,8 @@
 import re
 from django_rq import job
 from django.core.mail import send_mail
-from whistle.managers import NotificationManager
 from whistle import settings as whistle_settings
+from whistle.settings import NotificationManager
 
 
 def notify(request, recipient, event, actor=None, object=None, target=None, details=''):

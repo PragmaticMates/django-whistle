@@ -19,9 +19,9 @@ except ImportError:
     # Django >= 3
     from django.utils.translation import gettext as ugettext
 
-from whistle.managers import NotificationManager
-from whistle.models import Notification
 from whistle import settings as whistle_settings
+from whistle.models import Notification
+from whistle.settings import NotificationManager
 
 
 class NotificationAdminForm(forms.ModelForm):

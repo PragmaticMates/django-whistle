@@ -21,8 +21,10 @@ except ImportError:
 
 from django.utils.translation import get_language
 
-from whistle.managers import NotificationQuerySet, NotificationManager  # TODO: get manager from config
+
 from whistle import settings as whistle_settings
+from whistle.managers import NotificationQuerySet
+from whistle.settings import NotificationManager
 
 try:
     # Python 2

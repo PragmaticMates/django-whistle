@@ -1,5 +1,7 @@
 from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
+from django.utils.module_loading import import_string
+
 
 EVENTS = getattr(settings, 'WHISTLE_NOTIFICATION_EVENTS', [])
 CHANNELS = getattr(settings, 'WHISTLE_CHANNELS', ['web', 'email'])
@@ -16,3 +18,7 @@ OLD_THRESHOLD = getattr(settings, 'WHISTLE_OLD_THRESHOLD', None)
 
 if 'push' in CHANNELS and 'fcm_django' not in settings.INSTALLED_APPS:
     raise ValueError('fcm_django is required for push notifications. Either install the app or remove push channel from whistle channels')
+
+NOTIFICATION_MANAGER_CLASS = getattr(settings, 'NOTIFICATION_MANAGER_CLASS', 'whistle.managers.NotificationManager')
+
+NotificationManager = import_string(NOTIFICATION_MANAGER_CLASS)
