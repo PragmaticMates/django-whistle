@@ -62,12 +62,10 @@ class NotificationManager(object):
     notification_emailed = django.dispatch.Signal()
     notification_pushed = django.dispatch.Signal()
 
-    @staticmethod
-    def is_channel_available(user, channel):
-        return NotificationManager.is_notification_available(user, channel, event=None)
+    def is_channel_available(self, user, channel):
+        return self.is_notification_available(user, channel, event=None)
 
-    @staticmethod
-    def is_notification_available(user, channel, event):
+    def is_notification_available(self, user, channel, event):
         handler = whistle_settings.AVAILABILITY_HANDLER
 
         if handler:
@@ -81,14 +79,12 @@ class NotificationManager(object):
 
         return channel in whistle_settings.CHANNELS
 
-    @staticmethod
-    def is_channel_enabled(user, channel):
-        return NotificationManager.is_notification_enabled(user, channel, event=None)
+    def is_channel_enabled(self, user, channel):
+        return self.is_notification_enabled(user, channel, event=None)
 
-    @staticmethod
-    def is_notification_enabled(user, channel, event, bypass_channel=False):
+    def is_notification_enabled(self, user, channel, event, bypass_channel=False):
         # check if event is available for user
-        if not NotificationManager.is_notification_available(user, channel, event):
+        if not self.is_notification_available(user, channel, event):
             return False
 
         notification_settings = user.notification_settings
@@ -107,7 +103,7 @@ class NotificationManager(object):
                 return True
 
         # checking channel settings at first (higher priority)
-        if not NotificationManager.is_channel_enabled(user, channel) and not bypass_channel:
+        if not self.is_channel_enabled(user, channel) and not bypass_channel:
             return False
 
         event_identifier = event.lower()
@@ -119,8 +115,7 @@ class NotificationManager(object):
             # event enabled by default
             return True
 
-    @staticmethod
-    def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
+    def notify(self, request, recipient, event, actor=None, object=None, target=None, details=''):
         if not recipient.is_active:
             return
 
@@ -137,7 +132,7 @@ class NotificationManager(object):
         )
 
         # web
-        if NotificationManager.is_notification_enabled(recipient, 'web', event):
+        if self.is_notification_enabled(recipient, 'web', event):
             # save notification to DB
             notification.save()
 
@@ -145,21 +140,20 @@ class NotificationManager(object):
             recipient.clear_unread_notifications_cache()
 
         # email
-        if NotificationManager.is_notification_enabled(recipient, 'email', event):
+        if self.is_notification_enabled(recipient, 'email', event):
             notification.send_mail(request)
-            NotificationManager.notification_emailed.send(
-                sender=NotificationManager, notification=notification, request=request,
+            self.notification_emailed.send(
+                sender=self.__class__, notification=notification, request=request,
             )
 
         # push
-        if NotificationManager.is_notification_enabled(recipient, 'push', event):
+        if self.is_notification_enabled(recipient, 'push', event):
             notification.push(request)
-            NotificationManager.notification_pushed.send(
-                sender=NotificationManager, notification=notification,
+            self.notification_pushed.send(
+                sender=self.__class__, notification=notification,
             )
 
-    @staticmethod
-    def get_event_context(event, actor, object, target):
+    def get_event_context(self, event, actor, object, target):
         event_context = {
             'actor': actor if actor else '',
             'object': object if object else '',
@@ -176,9 +170,8 @@ class NotificationManager(object):
 
         return event_context
 
-    @staticmethod
-    def get_description(event, actor, object, target, pass_variables=True):
-        event_context = NotificationManager.get_event_context(
+    def get_description(self, event, actor, object, target, pass_variables=True):
+        event_context = self.get_event_context(
             event=event,
             actor=actor,
             object=object,
@@ -198,11 +191,10 @@ class NotificationManager(object):
 
         return description
 
-    @staticmethod
-    def mail_notification(notification, request):
-        from whistle.settings import EmailManager
+    def mail_notification(self, notification, request):
+        from whistle.settings import email_manager
 
-        return EmailManager.send_mail(
+        return email_manager.send_mail(
             request=request,
             recipient=notification.recipient,
             event=notification.event,
@@ -214,8 +206,7 @@ class NotificationManager(object):
             url=notification.get_absolute_url()
         )
 
-    @staticmethod
-    def get_push_config(notification):
+    def get_push_config(self, notification):
         if notification.details not in EMPTY_VALUES:
             title = notification.description
             body = notification.details
@@ -242,8 +233,7 @@ class NotificationManager(object):
             }
         }
 
-    @staticmethod
-    def push_notification(notification, request):
+    def push_notification(self, notification, request):
         from fcm_django.models import FCMDevice
         from firebase_admin.messaging import Notification, Message, \
             AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig
@@ -292,13 +282,12 @@ class NotificationManager(object):
 
 
 class EmailManager(object):
-    @staticmethod
-    def send_mail(request, recipient, event, **kwargs):
+    def send_mail(self, request, recipient, event, **kwargs):
         """
         Send email notification about a new event to its recipient
         """
 
-        html_message, message, recipient_list, subject = EmailManager.prepare_email(
+        html_message, message, recipient_list, subject = self.prepare_email(
             request=request,
             recipient=recipient,
             event=event,
@@ -313,8 +302,7 @@ class EmailManager(object):
             # send mail in main thread
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
 
-    @staticmethod
-    def load_template(template_type, request, recipient, event, **kwargs):
+    def load_template(self, template_type, request, recipient, event, **kwargs):
         try:
             # event specific template
             return (
@@ -334,20 +322,19 @@ class EmailManager(object):
                     None
                 )
 
-    @staticmethod
-    def prepare_email(request, recipient, event, **kwargs):
+    def prepare_email(self, request, recipient, event, **kwargs):
         # Load templates
-        t, _ = EmailManager.load_template("txt", request, recipient, event, **kwargs)
-        t_html, _ = EmailManager.load_template("html", request, recipient, event, **kwargs)
+        t, _ = self.load_template("txt", request, recipient, event, **kwargs)
+        t_html, _ = self.load_template("html", request, recipient, event, **kwargs)
 
         # recipients
         recipient_list = [recipient.email]
 
         # context
-        context = EmailManager.get_mail_context(request, recipient, event, **kwargs)
+        context = self.get_mail_context(request, recipient, event, **kwargs)
 
         # subject
-        subject = EmailManager.get_mail_subject(request, context)
+        subject = self.get_mail_subject(request, context)
 
         # message
         message = t.render(context)
@@ -357,8 +344,7 @@ class EmailManager(object):
 
         return html_message, message, recipient_list, subject
 
-    @staticmethod
-    def get_mail_subject(request, context):
+    def get_mail_subject(self, request, context):
         try:
             site = get_current_site(request)
 
@@ -369,8 +355,7 @@ class EmailManager(object):
         except ObjectDoesNotExist:
             return context['short_description']
 
-    @staticmethod
-    def get_mail_context(request, recipient, event, **kwargs):
+    def get_mail_context(self, request, recipient, event, **kwargs):
         actor = kwargs.get('actor', None)
         object = kwargs.get('object', None)
         target = kwargs.get('object', None)
@@ -383,9 +368,9 @@ class EmailManager(object):
         }
 
         # descriptions and subject
-        from whistle.settings import NotificationManager
-        description = NotificationManager.get_description(**description_kwargs, pass_variables=True)
-        short_description = NotificationManager.get_description(**description_kwargs, pass_variables=False)
+        from whistle.settings import notification_manager
+        description = notification_manager.get_description(**description_kwargs, pass_variables=True)
+        short_description = notification_manager.get_description(**description_kwargs, pass_variables=False)
 
         context = kwargs
 

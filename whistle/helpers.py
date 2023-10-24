@@ -2,11 +2,18 @@ import re
 from django_rq import job
 from django.core.mail import send_mail
 from whistle import settings as whistle_settings
-from whistle.settings import NotificationManager
+from whistle.settings import notification_manager
+
+try:
+    # older Django
+    from django.utils.translation import ugettext
+except ImportError:
+    # Django >= 3
+    from django.utils.translation import gettext as ugettext
 
 
 def notify(request, recipient, event, actor=None, object=None, target=None, details=''):
-    NotificationManager.notify(request, recipient, event, actor, object, target, details)
+    notification_manager.notify(request, recipient, event, actor, object, target, details)
 
 
 @job(whistle_settings.REDIS_QUEUE)
@@ -20,6 +27,8 @@ def send_mail_in_background(subject, message, from_email, recipient_list, html_m
 
 
 def strip_unwanted_chars(str):
+    pat = re.compile(r'%\(.*\)s|"%\(.*\)s"|%\(.*\)r|"%\(.*\)r"')
+    str = re.sub(pat, '', ugettext(str))  # remove all variable placeholders
     str = str.replace("''", '')  # remove all 2 single quotas
     str = str.replace('""', '')  # remove all 2 double quotas
     str = str.replace('()', '')  # remove empty braces

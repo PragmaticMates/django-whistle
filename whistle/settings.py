@@ -22,5 +22,5 @@ if 'push' in CHANNELS and 'fcm_django' not in settings.INSTALLED_APPS:
 NOTIFICATION_MANAGER_CLASS = getattr(settings, 'WHISTLE_NOTIFICATION_MANAGER_CLASS', 'whistle.managers.NotificationManager')
 EMAIL_MANAGER_CLASS = getattr(settings, 'WHISTLE_EMAIL_MANAGER_CLASS', 'whistle.managers.EmailManager')
 
-NotificationManager = import_string(NOTIFICATION_MANAGER_CLASS)
-EmailManager = import_string(EMAIL_MANAGER_CLASS)
+notification_manager = import_string(NOTIFICATION_MANAGER_CLASS)()
+email_manager = import_string(EMAIL_MANAGER_CLASS)()

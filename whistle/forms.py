@@ -4,6 +4,7 @@ from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, HTML, Field, Layout, Submit
 from django import forms
+from whistle.helpers import strip_unwanted_chars
 
 try:
     # older Django
@@ -21,7 +22,7 @@ except ImportError:
 
 from whistle import settings as whistle_settings
 from whistle.models import Notification
-from whistle.settings import NotificationManager
+from whistle.settings import notification_manager
 
 
 class NotificationAdminForm(forms.ModelForm):
@@ -62,15 +63,7 @@ class NotificationSettingsForm(forms.Form):
         events = dict(whistle_settings.EVENTS)
 
         for event, label in events.items():
-            # TODO: move to another static method (helper)
-            pat = re.compile(r'%\(.*\)s|"%\(.*\)s"|%\(.*\)r|"%\(.*\)r"')
-            new_label = re.sub(pat, '', ugettext(label))  # remove all variable placeholders
-            new_label = new_label.replace("''", '')  # remove all 2 single quotas
-            new_label = new_label.replace('""', '')  # remove all 2 double quotas
-            new_label = new_label.replace('()', '')  # remove empty braces
-            new_label = new_label.strip(' :.')  # remove trailing spaces and semicolons
-            new_label = re.sub(' +', ' ', new_label)  # remove all multiple spaces
-
+            new_label = strip_unwanted_chars(label)
             events[event] = new_label
 
         return events
@@ -92,11 +85,11 @@ class NotificationSettingsForm(forms.Form):
         }
 
     def get_initial_value(self, channel, event=None):
-        return NotificationManager.is_notification_enabled(self.user, channel, event, bypass_channel=True)
+        return notification_manager.is_notification_enabled(self.user, channel, event, bypass_channel=True)
 
     def init_fields(self):
         for channel in whistle_settings.CHANNELS:
-            if NotificationManager.is_channel_available(self.user, channel):
+            if notification_manager.is_channel_available(self.user, channel):
                 self.fields.update({
                     channel: forms.BooleanField(
                         label=self.channel_labels(channel),
@@ -108,7 +101,7 @@ class NotificationSettingsForm(forms.Form):
             field_names = self.field_names(event)
 
             for channel in whistle_settings.CHANNELS:
-                if NotificationManager.is_notification_available(self.user, channel, event):
+                if notification_manager.is_notification_available(self.user, channel, event):
                     self.fields.update({
                         field_names[channel]: forms.BooleanField(
                             label=self.channel_labels(channel),
@@ -121,7 +114,7 @@ class NotificationSettingsForm(forms.Form):
         channel_fields = []
 
         for channel in whistle_settings.CHANNELS:
-            if NotificationManager.is_channel_available(self.user, channel):
+            if notification_manager.is_channel_available(self.user, channel):
                 channel_fields.append(
                     Div(Field(channel, css_class='switch'), css_class='channel fw-bold col-md mb-3')
                 )
@@ -138,7 +131,7 @@ class NotificationSettingsForm(forms.Form):
             event_fields = []
 
             for channel in whistle_settings.CHANNELS:
-                if NotificationManager.is_notification_available(self.user, channel, event):
+                if notification_manager.is_notification_available(self.user, channel, event):
                     event_fields.append(
                         Div(Field(field_names[channel], css_class='switch'), css_class='col-md')
                     )
@@ -165,7 +158,7 @@ class NotificationSettingsForm(forms.Form):
         settings = {'channels': {}, 'events': {}}
 
         for channel in whistle_settings.CHANNELS:
-            if NotificationManager.is_channel_available(self.user, channel):
+            if notification_manager.is_channel_available(self.user, channel):
                 settings['channels'][channel] = self.cleaned_data.get(channel)
 
         # events
@@ -174,8 +167,8 @@ class NotificationSettingsForm(forms.Form):
             event_identifier = event.lower()
 
             for channel in whistle_settings.CHANNELS:
-                if NotificationManager.is_channel_available(self.user, channel) and \
-                        NotificationManager.is_notification_available(self.user, channel, event):
+                if notification_manager.is_channel_available(self.user, channel) and \
+                        notification_manager.is_notification_available(self.user, channel, event):
                     if channel not in settings['events']:
                         settings['events'][channel] = {}
 

@@ -1,7 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.core.validators import EMPTY_VALUES
 from django.db import models
 from django.utils.module_loading import import_string
 
@@ -24,7 +23,7 @@ from django.utils.translation import get_language
 
 from whistle import settings as whistle_settings
 from whistle.managers import NotificationQuerySet
-from whistle.settings import NotificationManager
+from whistle.settings import notification_manager
 
 try:
     # Python 2
@@ -92,12 +91,11 @@ class Notification(models.Model):
             return saved_description
 
         try:
-            description = NotificationManager.get_description(self.event, self.actor, self.object, self.target, pass_variables)
+            description = notification_manager.get_description(self.event, self.actor, self.object, self.target, pass_variables)
         except KeyError:
-            # referenced object does not exist anymore
-            if self.pk:
-                self.delete()
-            return ugettext('Related object does not exist anymore')
+            # if self.pk:
+            #     self.delete()
+            return ugettext('Failed to retrieve description')
 
         # save into cache
         cache.set(cache_key, description, version=cache_version, timeout=whistle_settings.TIMEOUT)
@@ -151,18 +149,18 @@ class Notification(models.Model):
 
     @property
     def push_config(self):
-        return NotificationManager.get_push_config(
+        return notification_manager.get_push_config(
             notification=self
         )
 
     def send_mail(self, request=None):
-        return NotificationManager.mail_notification(
+        return notification_manager.mail_notification(
             notification=self,
             request=request
         )
 
     def push(self, request=None):
-        return NotificationManager.push_notification(
+        return notification_manager.push_notification(
             notification=self,
             request=request
         )
