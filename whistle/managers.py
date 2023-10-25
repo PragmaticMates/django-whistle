@@ -358,7 +358,7 @@ class EmailManager(object):
     def get_mail_context(self, request, recipient, event, **kwargs):
         actor = kwargs.get('actor', None)
         object = kwargs.get('object', None)
-        target = kwargs.get('object', None)
+        target = kwargs.get('target', None)
 
         description_kwargs = {
             'event': event,
