@@ -29,6 +29,7 @@ Customize Django Whistle by configuring settings in your project's `settings.py`
 ### Basics
 
 Setup events and channels for notifications like this:
+**Pro tip**, you can use TextChoices for events.
 
 ```python
  # settings.py
@@ -36,9 +37,11 @@ Setup events and channels for notifications like this:
 WHISTLE_CHANNELS = ['web', 'push', 'email']
 WHISTLE_NOTIFICATION_EVENTS = (
     ('NAME_OF_EVENT', gettext_lazy('Object %(object)r was updated')
-     )
+)
 ```
 
+
+```python
 ### Custom Notification Manager/Handlers
 
 You can ovverride the logic of sending notifications by creating custom manager or handler. Handler is for general
