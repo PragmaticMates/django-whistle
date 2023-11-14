@@ -313,7 +313,7 @@ class EmailManager(object):
             try:
                 # default universal template
                 return (
-                    loader.get_template('whistle/mails/new_notification.{}'.format(event.lower(), template_type)),
+                    loader.get_template('whistle/mails/new_notification.{}'.format(template_type)),
                     True
                 )
             except TemplateDoesNotExist:
