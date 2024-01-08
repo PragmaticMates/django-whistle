@@ -8,6 +8,7 @@ setup(
     version=VERSION,
     description='Advanced notifications for Django',
     long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
     author='Pragmatic Mates',
     author_email='info@pragmaticmates.com',
     maintainer='Pragmatic Mates',
