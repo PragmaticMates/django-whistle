@@ -115,7 +115,7 @@ class NotificationManager(object):
             # event enabled by default
             return True
 
-    def notify(self, request, recipient, event, actor=None, object=None, target=None, details=''):
+    def notify(self, recipient, event, actor=None, object=None, target=None, details=''):
         if not recipient.is_active:
             return
 
@@ -141,14 +141,14 @@ class NotificationManager(object):
 
         # email
         if self.is_notification_enabled(recipient, 'email', event):
-            notification.send_mail(request)
+            notification.send_mail()
             self.notification_emailed.send(
-                sender=self.__class__, notification=notification, request=request,
+                sender=self.__class__, notification=notification,
             )
 
         # push
         if self.is_notification_enabled(recipient, 'push', event):
-            notification.push(request)
+            notification.push()
             self.notification_pushed.send(
                 sender=self.__class__, notification=notification,
             )
@@ -191,11 +191,10 @@ class NotificationManager(object):
 
         return description
 
-    def mail_notification(self, notification, request):
+    def mail_notification(self, notification):
         from whistle.settings import email_manager
 
         return email_manager.send_mail(
-            request=request,
             recipient=notification.recipient,
             event=notification.event,
             actor=notification.actor,
@@ -233,7 +232,7 @@ class NotificationManager(object):
             }
         }
 
-    def push_notification(self, notification, request):
+    def push_notification(self, notification):
         from fcm_django.models import FCMDevice
         from firebase_admin.messaging import Notification, Message, \
             AndroidConfig, AndroidNotification, APNSPayload, Aps, APNSConfig
@@ -282,13 +281,12 @@ class NotificationManager(object):
 
 
 class EmailManager(object):
-    def send_mail(self, request, recipient, event, **kwargs):
+    def send_mail(self, recipient, event, **kwargs):
         """
         Send email notification about a new event to its recipient
         """
 
         html_message, message, recipient_list, subject = self.prepare_email(
-            request=request,
             recipient=recipient,
             event=event,
             **kwargs
@@ -302,7 +300,7 @@ class EmailManager(object):
             # send mail in main thread
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
 
-    def load_template(self, template_type, request, recipient, event, **kwargs):
+    def load_template(self, template_type, recipient, event, **kwargs):
         try:
             # event specific template
             return (
@@ -322,19 +320,19 @@ class EmailManager(object):
                     None
                 )
 
-    def prepare_email(self, request, recipient, event, **kwargs):
+    def prepare_email(self, recipient, event, **kwargs):
         # Load templates
-        t, _ = self.load_template("txt", request, recipient, event, **kwargs)
-        t_html, _ = self.load_template("html", request, recipient, event, **kwargs)
+        t, _ = self.load_template("txt", recipient, event, **kwargs)
+        t_html, _ = self.load_template("html", recipient, event, **kwargs)
 
         # recipients
         recipient_list = [recipient.email]
 
         # context
-        context = self.get_mail_context(request, recipient, event, **kwargs)
+        context = self.get_mail_context(recipient, event, **kwargs)
 
         # subject
-        subject = self.get_mail_subject(request, context)
+        subject = self.get_mail_subject(context)
 
         # message
         message = t.render(context)
@@ -344,9 +342,9 @@ class EmailManager(object):
 
         return html_message, message, recipient_list, subject
 
-    def get_mail_subject(self, request, context):
+    def get_mail_subject(self, context):
         try:
-            site = get_current_site(request)
+            site = get_current_site(request=None)
 
             return '[{}] {}'.format(
                 site.name,
@@ -355,7 +353,7 @@ class EmailManager(object):
         except ObjectDoesNotExist:
             return context['short_description']
 
-    def get_mail_context(self, request, recipient, event, **kwargs):
+    def get_mail_context(self, recipient, event, **kwargs):
         actor = kwargs.get('actor', None)
         object = kwargs.get('object', None)
         target = kwargs.get('target', None)
@@ -375,7 +373,6 @@ class EmailManager(object):
         context = kwargs
 
         context.update({
-            'request': request,
             'recipient': recipient,
             'event': event,
             'description': description,

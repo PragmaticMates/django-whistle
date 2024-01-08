@@ -153,14 +153,12 @@ class Notification(models.Model):
             notification=self
         )
 
-    def send_mail(self, request=None):
+    def send_mail(self):
         return notification_manager.mail_notification(
             notification=self,
-            request=request
         )
 
-    def push(self, request=None):
+    def push(self):
         return notification_manager.push_notification(
-            notification=self,
-            request=request
+            notification=self
         )

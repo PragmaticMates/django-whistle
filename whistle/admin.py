@@ -90,7 +90,7 @@ class NotificationAdmin(admin.ModelAdmin):
             return
 
         for notification in queryset:
-            notification.send_mail(request)
+            notification.send_mail()
     send_email.short_description = _('Send email')
 
     def resave_description(self, request, queryset):
@@ -104,5 +104,5 @@ class NotificationAdmin(admin.ModelAdmin):
             return
 
         for notification in queryset:
-            notification.push(request)
+            notification.push()
     push.short_description = _('Push')
