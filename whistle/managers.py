@@ -294,7 +294,7 @@ class EmailManager(object):
 
         if whistle_settings.USE_RQ:
             # use background task to release main thread
-            from whistle.helpers import send_mail_in_background
+            from whistle.jobs import send_mail_in_background
             send_mail_in_background.delay(subject, message, settings.DEFAULT_FROM_EMAIL, recipient_list, html_message=html_message, fail_silently=False)
         else:
             # send mail in main thread
