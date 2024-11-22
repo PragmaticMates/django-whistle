@@ -19,7 +19,7 @@ setup(
         'whistle.migrations'
     ],
     include_package_data=True,
-    install_requires=('django', 'django_rq', 'django-crispy-forms', 'django-pragmatic>=4.1.0'),
+    install_requires=('django>=3', 'django_rq', 'django-crispy-forms', 'django-pragmatic>=4.1.0'),
     classifiers=[
         'Programming Language :: Python',
         'Operating System :: OS Independent',

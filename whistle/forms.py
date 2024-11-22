@@ -1,26 +1,13 @@
 import re
 
+from django import forms
+from django.utils.translation import gettext, gettext_lazy as _
 from crispy_forms.bootstrap import FormActions
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Div, HTML, Field, Layout, Submit
-from django import forms
-from whistle.helpers import strip_unwanted_chars
-
-try:
-    # older Django
-    from django.utils.translation import ugettext_lazy as _
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext_lazy as _
-
-try:
-    # older Django
-    from django.utils.translation import ugettext
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext as ugettext
 
 from whistle import settings as whistle_settings
+from whistle.helpers import strip_unwanted_chars
 from whistle.models import Notification
 from whistle.settings import notification_manager
 

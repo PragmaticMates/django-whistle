@@ -1,12 +1,7 @@
 import re
-from whistle.settings import notification_manager
+from django.utils.translation import gettext
 
-try:
-    # older Django
-    from django.utils.translation import ugettext
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext as ugettext
+from whistle.settings import notification_manager
 
 
 def notify(recipient, event, actor=None, object=None, target=None, details=''):
@@ -16,7 +11,7 @@ def notify(recipient, event, actor=None, object=None, target=None, details=''):
 
 def strip_unwanted_chars(str):
     pat = re.compile(r'%\(.*\)s|"%\(.*\)s"|%\(.*\)r|"%\(.*\)r"')
-    str = re.sub(pat, '', ugettext(str))  # remove all variable placeholders
+    str = re.sub(pat, '', gettext(str))  # remove all variable placeholders
     str = str.replace("''", '')  # remove all 2 single quotas
     str = str.replace('""', '')  # remove all 2 double quotas
     str = str.replace('()', '')  # remove empty braces

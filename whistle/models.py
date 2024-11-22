@@ -3,36 +3,14 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import models
 from django.utils.module_loading import import_string
+from django.utils.translation import gettext, gettext_lazy as _, get_language
 
-try:
-    # older Django
-    from django.utils.translation import ugettext_lazy as _
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext_lazy as _
-
-try:
-    # older Django
-    from django.utils.translation import ugettext
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext as ugettext
-
-from django.utils.translation import get_language
-
+import urllib.parse as urlparse
+from urllib.parse import urlencode
 
 from whistle import settings as whistle_settings
 from whistle.managers import NotificationQuerySet
 from whistle.settings import notification_manager
-
-try:
-    # Python 2
-    import urlparse
-    from urllib import urlencode
-except:
-    # Python 3
-    import urllib.parse as urlparse
-    from urllib.parse import urlencode
 
 
 class Notification(models.Model):
@@ -95,7 +73,7 @@ class Notification(models.Model):
         except KeyError:
             # if self.pk:
             #     self.delete()
-            return ugettext('Failed to retrieve description')
+            return gettext('Failed to retrieve description')
 
         # save into cache
         cache.set(cache_key, description, version=cache_version, timeout=whistle_settings.TIMEOUT)

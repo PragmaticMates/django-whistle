@@ -5,21 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.signing import BadSignature
 from django.http import HttpResponse
 from django.urls import reverse_lazy
-
-try:
-    # older Django
-    from django.utils.translation import ugettext_lazy as _
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext_lazy as _
-
-try:
-    # older Django
-    from django.utils.translation import ugettext
-except ImportError:
-    # Django >= 3
-    from django.utils.translation import gettext as ugettext
-
+from django.utils.translation import gettext, gettext_lazy as _
 from django.views import View
 from django.views.generic import ListView, FormView
 
