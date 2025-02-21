@@ -15,6 +15,7 @@ SIGNING_KEY = getattr(settings, 'WHISTLE_SIGNING_KEY', settings.SECRET_KEY)
 SIGNING_SALT = getattr(settings, 'WHISTLE_SIGNING_SALT', 'whistle')
 AUTH_USER_MODEL = getattr(settings, 'WHISTLE_AUTH_USER_MODEL', settings.AUTH_USER_MODEL)
 OLD_THRESHOLD = getattr(settings, 'WHISTLE_OLD_THRESHOLD', None)
+DEFAULT_NOTIFICATIONS = getattr(settings, 'WHISTLE_DEFAULT_NOTIFICATIONS', {})
 
 if 'push' in CHANNELS and 'fcm_django' not in settings.INSTALLED_APPS:
     raise ValueError('fcm_django is required for push notifications. Either install the app or remove push channel from whistle channels')
