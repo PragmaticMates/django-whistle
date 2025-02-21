@@ -112,8 +112,9 @@ class NotificationManager(object):
             # user event setting
             return notification_settings['events'][channel][event_identifier]
         except (KeyError, TypeError):
-            # event enabled by default
-            return True
+            # default notification setting (enabled by default if missing)
+            default_settings = whistle_settings.DEFAULT_NOTIFICATIONS
+            return default_settings.get('events', {}).get(channel, {}).get(event_identifier, True)
 
     def notify(self, recipient, event, actor=None, object=None, target=None, details=''):
         if not recipient.is_active:
