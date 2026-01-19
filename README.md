@@ -1,128 +1,248 @@
 # django-whistle
 
-Django Whistle is a Django app that provides a simple way to send notifications via different channels.
-Currently supports `web`, `push`, `email` channels.
+Django Whistle is a Django app that provides a flexible, multi-channel notification system.
+Supports `web` (in-app), `email`, and `push` (FCM) channels with user preferences and background job processing.
 
-## Basic Usage
-
-1. **Installation**: Install Django Whistle using pip:
+## Installation
 
 ```bash
 pip install django-whistle
 ```
 
-2. **Configuration in settings**: Add 'whistle' to your `INSTALLED_APPS` in the Django project settings:
+Add to your `INSTALLED_APPS`:
 
- ```python
- # settings.py
-
+```python
 INSTALLED_APPS = [
     # ...
     'whistle',
+    'fcm_django',  # only if using push notifications
 ]
- ```
+```
+
+Run migrations:
+
+```bash
+python manage.py migrate whistle
+```
 
 ## Configuration
 
-Customize Django Whistle by configuring settings in your project's `settings.py`:
+### Events and Channels
 
-### Basics
-
-Setup events and channels for notifications like this:
-**Pro tip**, you can use TextChoices for events.
+Define notification events and enable channels in your `settings.py`:
 
 ```python
- # settings.py
+from django.utils.translation import gettext_lazy as _
 
 WHISTLE_CHANNELS = ['web', 'push', 'email']
 WHISTLE_NOTIFICATION_EVENTS = (
-    ('NAME_OF_EVENT', gettext_lazy('Object %(object)r was updated')
+    ('ORDER_PLACED', _('%(actor)s placed order %(object)s')),
+    ('ORDER_SHIPPED', _('Your order %(object)s has been shipped')),
 )
 ```
 
+Template variables: `%(actor)s`, `%(object)s`, `%(target)s`
+
+### User Model Integration
+
+Add the mixin to your User model for notification preferences and unread counts:
 
 ```python
-### Custom Notification Manager/Handlers
+from whistle.mixins import UserNotificationsMixin
 
-You can ovverride the logic of sending notifications by creating custom manager or handler. Handler is for general
-availability of event/channel, and managers is for defining the behaviour. For example, you can use it to customize
-emails, add context to emails, or for whatever you miss in the default implementation.
+class User(UserNotificationsMixin, AbstractUser):
+    pass
+```
+
+### URL Configuration
+
+```python
+from django.urls import path, include
+
+urlpatterns = [
+    path('notifications/', include('whistle.urls')),
+]
+```
+
+This provides:
+- `notifications:list` - Notification list view
+- `notifications:settings` - User preference management
+- `notifications:read_notification` - Mark notification as read via signed hash
+
+### Middleware
+
+Add `ReadNotificationMiddleware` to automatically mark notifications as read:
+
+```python
+MIDDLEWARE = [
+    # ...
+    'whistle.middleware.ReadNotificationMiddleware',
+]
+```
+
+The middleware provides two features:
+
+1. **URL parameter tracking** - Marks a notification as read when the URL contains the `read-notification` query parameter (configurable via `WHISTLE_URL_PARAM`) with the notification ID.
+
+2. **DetailView auto-marking** - Automatically marks all unread notifications as read when a user views a `DetailView` of an object that is related to the notification (either as `object` or `target`).
+
+### Custom Managers and Handlers
+
+Override notification logic by creating custom managers or handlers:
 
 ```python
 # settings.py
 
-WHISTLE_EMAIL_MANAGER_CLASS = "bidding.notifications.managers.CustomEmailManager"
-WHISTLE_NOTIFICATION_MANAGER_CLASS = (
-    "bidding.notifications.managers.CustomNotificationManager"
-)
-WHISTLE_AVAILABILITY_HANDLER = "bidding.notifications.handlers.availability_handler"
+WHISTLE_AVAILABILITY_HANDLER = "myapp.handlers.availability_handler"
+WHISTLE_NOTIFICATION_MANAGER_CLASS = "myapp.managers.CustomNotificationManager"
+WHISTLE_EMAIL_MANAGER_CLASS = "myapp.managers.CustomEmailManager"
 ```
 
 ### Asynchronous Notifications
 
-You can send notifications asynchronously using queues.
+Enable background processing with django-rq:
 
 ```python
 # settings.py
 
-WHISTLE_REDIS_QUEUE = None
-WHISTLE_USE_RQ = False
-RQ_QUEUES = None
-WHISTLE_CACHE_TIMEOUT = None  # infinite
+WHISTLE_USE_RQ = True
+WHISTLE_REDIS_QUEUE = 'default'
+
+RQ_QUEUES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': 6379,
+        'DB': 0,
+    }
+}
 ```
 
-## Running the tests
+### All Settings Reference
 
-Explain how to run the automated tests for this system
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `WHISTLE_NOTIFICATION_EVENTS` | `[]` | Tuple of (event_name, template_string) pairs |
+| `WHISTLE_CHANNELS` | `['web', 'email']` | Enabled notification channels |
+| `WHISTLE_AVAILABILITY_HANDLER` | `None` | Path to custom availability function |
+| `WHISTLE_URL_HANDLER` | `None` | Path to custom URL generation function |
+| `WHISTLE_URL_PARAM` | `'read-notification'` | Query parameter for marking notifications read |
+| `WHISTLE_CACHE_TIMEOUT` | `DEFAULT_TIMEOUT` | Cache duration (Django's default) |
+| `WHISTLE_USE_RQ` | `True` | Enable background job processing |
+| `WHISTLE_REDIS_QUEUE` | `'default'` | Redis queue name for background jobs |
+| `WHISTLE_SIGNING_KEY` | `SECRET_KEY` | Key for signing notification hashes |
+| `WHISTLE_SIGNING_SALT` | `'whistle'` | Salt for signing notification hashes |
+| `WHISTLE_AUTH_USER_MODEL` | `AUTH_USER_MODEL` | Custom user model |
+| `WHISTLE_OLD_THRESHOLD` | `None` | Age threshold for old notifications (timedelta) |
+| `WHISTLE_DEFAULT_NOTIFICATIONS` | `{}` | Default channel/event settings |
+| `WHISTLE_NOTIFICATION_MANAGER_CLASS` | `'whistle.managers.NotificationManager'` | Custom notification manager |
+| `WHISTLE_EMAIL_MANAGER_CLASS` | `'whistle.managers.EmailManager'` | Custom email manager |
 
-### Break down into end to end tests
+## Usage
 
-Explain what these tests test and why
+### Sending Notifications
 
+```python
+from whistle.helpers import notify
+
+notify(
+    recipient=user,
+    event='ORDER_PLACED',
+    actor=request.user,
+    object=order,
+    target=None,
+    details='Additional context',
+)
 ```
-Give an example
+
+### Email Templates
+
+Create event-specific email templates at `templates/whistle/mails/{event_name}.txt`.
+Falls back to `templates/whistle/mails/new_notification.txt`.
+
+### Management Commands
+
+```bash
+# Delete old notifications
+python manage.py delete_old_notifications [--dry-run]
+
+# Copy notification settings between channels
+python manage.py copy_channel_settings <from_channel> <to_channel> [--delete]
 ```
 
-### And coding style tests
+## REST API
 
-Explain what these tests test and why
+If using Django REST Framework, the package provides:
+- `NotificationViewSet` - Read-only viewset for user notifications
+- `MarkNotificationsAsReadAPIView` - PATCH endpoint to mark notifications as read
 
-```
-Give an example
-```
+## Managers
 
-## Deployment
+### NotificationQuerySet
 
-Add additional notes about how to deploy this on a live system
+Custom queryset with filtering methods for notifications:
 
-## Built With
+| Method | Description |
+|--------|-------------|
+| `unread()` | Filter unread notifications |
+| `mark_as_read()` | Bulk update notifications as read |
+| `for_recipient(user)` | Filter by recipient user |
+| `of_object(obj)` | Filter by related object |
+| `of_target(target)` | Filter by target object |
+| `of_object_or_target(obj)` | Filter by either object or target |
+| `old(threshold)` | Filter notifications older than threshold |
+| `not_old(threshold)` | Filter notifications newer than threshold |
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+### NotificationManager
 
-## Contributing
+Handles notification creation and dispatch logic. Key methods:
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of
-conduct, and the process for submitting pull requests to us.
+| Method | Description |
+|--------|-------------|
+| `notify(recipient, event, actor, object, target, details)` | Create and dispatch notification to enabled channels |
+| `is_channel_available(user, channel)` | Check if channel is available for user |
+| `is_notification_enabled(user, channel, event)` | Check if notification is enabled (availability + user preferences) |
+| `get_description(event, actor, object, target)` | Render notification text from event template |
+| `get_push_config(notification)` | Build FCM push notification configuration |
+| `push_notification(notification)` | Send push notification via FCM |
+| `mail_notification(notification)` | Trigger email notification |
+
+Signals emitted:
+- `notification_emailed` - Sent after email notification is dispatched
+- `notification_pushed` - Sent after push notification is dispatched
+
+### EmailManager
+
+Handles email notification rendering and sending:
+
+| Method | Description |
+|--------|-------------|
+| `send_mail(recipient, event, **kwargs)` | Send email notification (sync or via RQ) |
+| `prepare_email(recipient, event, **kwargs)` | Build email subject, message, and HTML content |
+| `load_template(template_type, recipient, event)` | Load event-specific or default template |
+| `get_mail_subject(context)` | Generate subject with site name prefix |
+| `get_mail_context(recipient, event, **kwargs)` | Build template context with descriptions |
+
+## Background Jobs
+
+When `WHISTLE_USE_RQ=True`, notifications and emails are processed asynchronously via django-rq:
+
+| Job | Description |
+|-----|-------------|
+| `notify_in_background(recipient, event, ...)` | Queue notification creation |
+| `send_mail_in_background(subject, message, ...)` | Queue email sending |
+
+Jobs are dispatched to the queue specified by `WHISTLE_REDIS_QUEUE` (default: `'default'`).
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see
-the [tags on this repository](https://github.com/your/project/tags).
+We use [SemVer](http://semver.org/) for versioning.
 
 ## Authors
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
+* **Erik Telepovský** - [Pragmatic Mates](https://github.com/pragmaticmates)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/pragmaticmates/django-whistle/contributors).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
+This project is licensed under the BSD License - see the [LICENSE](LICENSE) file for details.
