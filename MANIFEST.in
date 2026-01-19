@@ -3,3 +3,4 @@ include LICENSE
 include AUTHORS
 recursive-include whistle/templates *
 recursive-include whistle/locale *
+recursive-include whistle/management *
