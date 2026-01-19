@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<body>
+{% for notification in object_list %}
+<div>{{ notification.description }}</div>
+{% endfor %}
+{% if page_obj %}
+<nav>Page {{ page_obj.number }}</nav>
+{% endif %}
+</body>
+</html>
