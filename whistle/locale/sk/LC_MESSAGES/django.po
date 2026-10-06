@@ -25,6 +25,7 @@ msgid "%(count)d notification was marked as unread"
 msgid_plural "%(count)d notifications were marked as unread"
 msgstr[0] "%(count)d notifikácia bola označená za neprečítanú"
 msgstr[1] "%(count)d notifikácie boli označené za neprečítané"
+msgstr[2] "%(count)d notifikácií bolo označených za neprečítané"
 
 #: admin.py:29
 msgid "Make unread"
@@ -36,6 +37,7 @@ msgid "%(count)d notification was marked as read"
 msgid_plural "%(count)d notifications were marked as read"
 msgstr[0] "%(count)d notifikácia bola označená za prečítanú"
 msgstr[1] "%(count)d notifikácie boli označené za prečítané"
+msgstr[2] "%(count)d notifikácií bolo označených za prečítané"
 
 #: admin.py:43
 msgid "Make read"
@@ -119,4 +121,4 @@ msgstr "^nastavenia/$"
 
 #: views.py:33
 msgid "Notification settings successfully updated"
-msgstr "Nastavenia notifikácii úspešne uložené"
+msgstr "Nastavenia notifikácií boli úspešne uložené"

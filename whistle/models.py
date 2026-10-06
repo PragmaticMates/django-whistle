@@ -41,6 +41,10 @@ class Notification(models.Model):
         verbose_name = _('notification')
         verbose_name_plural = _('notifications')
         ordering = ('-created',)
+        indexes = [
+            # a user's unread notifications - counted for the bell on every page
+            models.Index(fields=['recipient', 'is_read'], name='whistle_recipient_is_read'),
+        ]
 
     def __str__(self):
         return self.description
